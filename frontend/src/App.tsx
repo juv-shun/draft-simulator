@@ -1,5 +1,5 @@
-import React from 'react';
 import type { Pokemon } from '@/types';
+import React from 'react';
 // 遅延読み込みコンポーネントを先に宣言
 const TeamPanel = React.lazy(() => import('./components/TeamPanel'));
 const CandidateGrid = React.lazy(() => import('./components/CandidateGrid'));
@@ -22,7 +22,7 @@ const App: React.FC = () => {
       <main className="mx-auto max-w-7xl px-4 py-6 space-y-6">
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div>
-            <TeamPanel team="purple" title="パープルチーム" />
+            <TeamPanel team="purple" title="パープルチーム（先攻）" />
           </div>
 
           <div className="panel flex flex-col items-center justify-center gap-3">
@@ -34,7 +34,7 @@ const App: React.FC = () => {
           </div>
 
           <div>
-            <TeamPanel team="orange" title="オレンジチーム" />
+            <TeamPanel team="orange" title="オレンジチーム（後攻）" />
           </div>
         </section>
 

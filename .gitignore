@@ -40,9 +40,13 @@ logs/
 .npm/
 .yarn/
 .pnpm/
+.eslintcache
 
 # TypeScript
 *.tsbuildinfo
+# Auto-generated TypeScript config files
+/frontend/vite.config.d.ts
+/frontend/vite.config.js
 
 # Vite
 .vite/

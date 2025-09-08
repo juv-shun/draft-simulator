@@ -47,6 +47,15 @@ const App: React.FC = () => {
     }, 1000);
   }, []);
 
+  // 次のターンへ移行してタイマーを再開
+  const gotoTurn = React.useCallback(
+    (turn: Exclude<Turn, null>) => {
+      setActiveTurn(turn);
+      startCountdown();
+    },
+    [startCountdown]
+  );
+
   // クリーンアップ
   React.useEffect(() => {
     return () => {
@@ -58,8 +67,11 @@ const App: React.FC = () => {
   React.useEffect(() => {
     if (!draftStarted) return;
     if (secondsLeft !== 0) return;
-    if (!activeTurn || activeTurn.team !== 'purple' || activeTurn.action !== 'ban' || activeTurn.index !== 1) return;
-    if (bans.purple[0]) return; // すでに確定済みならスキップ
+    if (!activeTurn || activeTurn.action !== 'ban') return;
+    // 今回のスコープ: purple BAN1 と orange BAN1 のみ処理
+    if (activeTurn.index !== 1) return;
+    if (activeTurn.team === 'purple' && bans.purple[0]) return; // 確定済み
+    if (activeTurn.team === 'orange' && bans.orange[0]) return; // 確定済み
 
     // すでにBAN/PICKされたIDを集合化
     const usedIds = new Set<string>();
@@ -73,12 +85,24 @@ const App: React.FC = () => {
     const preferred = pendingSelection && !usedIds.has(pendingSelection.id) ? pendingSelection : null;
     const choice = preferred ?? candidates[Math.floor(Math.random() * candidates.length)];
 
-    setBans((prev) => ({
-      ...prev,
-      purple: prev.purple.map((x, idx) => (idx === 0 ? choice : x)),
-    }));
-    setPendingSelection(null);
-  }, [secondsLeft, activeTurn, draftStarted, bans, picks, pendingSelection]);
+    if (activeTurn.team === 'purple') {
+      setBans((prev) => ({
+        ...prev,
+        purple: prev.purple.map((x, idx) => (idx === 0 ? choice : x)),
+      }));
+      setPendingSelection(null);
+      // 次のターンへ: オレンジ BAN1
+      gotoTurn({ team: 'orange', action: 'ban', index: 1 });
+    } else if (activeTurn.team === 'orange') {
+      setBans((prev) => ({
+        ...prev,
+        orange: prev.orange.map((x, idx) => (idx === 0 ? choice : x)),
+      }));
+      setPendingSelection(null);
+      // 次のターンへ: パープル BAN2
+      gotoTurn({ team: 'purple', action: 'ban', index: 2 });
+    }
+  }, [secondsLeft, activeTurn, draftStarted, bans, picks, pendingSelection, gotoTurn]);
 
   return (
     <div className="min-h-screen">
@@ -113,8 +137,7 @@ const App: React.FC = () => {
                   onClick={() => {
                     setDraftStarted(true);
                     setPhase('使用禁止フェーズ1');
-                    setActiveTurn({ team: 'purple', action: 'ban', index: 1 });
-                    startCountdown();
+                    gotoTurn({ team: 'purple', action: 'ban', index: 1 });
                   }}
                   className="rounded-md bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 >
@@ -158,18 +181,23 @@ const App: React.FC = () => {
               return ids;
             }, [bans, picks])}
             onConfirm={(p) => {
-              // 要件: ドラフト開始後、決定でパープル BAN1 を画像に置換
-              if (
-                activeTurn &&
-                activeTurn.team === 'purple' &&
-                activeTurn.action === 'ban' &&
-                activeTurn.index === 1
-              ) {
+              // BAN1系確定処理（パープル→オレンジ）
+              if (!activeTurn || activeTurn.action !== 'ban') return;
+              if (activeTurn.index !== 1) return;
+              if (activeTurn.team === 'purple') {
                 setBans((prev) => ({
                   ...prev,
                   purple: prev.purple.map((x, idx) => (idx === 0 ? p : x)),
                 }));
                 setPendingSelection(null);
+                gotoTurn({ team: 'orange', action: 'ban', index: 1 });
+              } else if (activeTurn.team === 'orange') {
+                setBans((prev) => ({
+                  ...prev,
+                  orange: prev.orange.map((x, idx) => (idx === 0 ? p : x)),
+                }));
+                setPendingSelection(null);
+                gotoTurn({ team: 'purple', action: 'ban', index: 2 });
               }
             }}
             onSelect={(p) => setPendingSelection(p)}

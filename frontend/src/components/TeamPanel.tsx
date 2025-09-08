@@ -17,21 +17,21 @@ const TeamPanel: React.FC<Props> = ({ team, title }) => {
 
       <section>
         <h3 className="mb-2 text-sm text-slate-300">使用禁止（BAN）</h3>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="slot">BAN 1</div>
-          <div className="slot">BAN 2</div>
-          <div className="slot">BAN 3</div>
+        <div className="grid grid-cols-3 gap-2 place-items-center">
+          <div className="slot slot-square">BAN 1</div>
+          <div className="slot slot-square">BAN 2</div>
+          <div className="slot slot-square">BAN 3</div>
         </div>
       </section>
 
       <section>
         <h3 className="mb-2 text-sm text-slate-300">使用ポケモン（PICK）</h3>
-        <div className="grid grid-cols-5 gap-2">
-          <div className="slot slot-lg">1</div>
-          <div className="slot slot-lg">2</div>
-          <div className="slot slot-lg">3</div>
-          <div className="slot slot-lg">4</div>
-          <div className="slot slot-lg">5</div>
+        <div className="grid grid-cols-5 gap-2 place-items-center">
+          <div className="slot slot-square">1</div>
+          <div className="slot slot-square">2</div>
+          <div className="slot slot-square">3</div>
+          <div className="slot slot-square">4</div>
+          <div className="slot slot-square">5</div>
         </div>
       </section>
     </div>
@@ -39,4 +39,3 @@ const TeamPanel: React.FC<Props> = ({ team, title }) => {
 };
 
 export default TeamPanel;
-

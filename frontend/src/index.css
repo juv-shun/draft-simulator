@@ -9,6 +9,10 @@
 .slot-lg {
   @apply h-16;
 }
+.slot-square {
+  /* BAN/PICK を同サイズの正方形に */
+  @apply w-16 h-16;
+}
 .panel {
   @apply rounded-lg border border-slate-700 bg-slate-800/50 p-3;
 }

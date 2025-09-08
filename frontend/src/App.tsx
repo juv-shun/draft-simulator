@@ -26,7 +26,7 @@ const App: React.FC = () => {
           </div>
 
           <div className="panel flex flex-col items-center justify-center gap-3">
-            <div className="text-sm text-slate-300">現在の手番</div>
+            <div className="text-sm text-slate-300">現在のフェーズ</div>
             <div className="text-2xl font-bold">—</div>
             <div className="text-sm text-slate-300">制限時間</div>
             <div className="text-3xl font-extrabold tabular-nums">15s</div>

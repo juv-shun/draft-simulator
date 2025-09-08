@@ -1,5 +1,5 @@
-import React from 'react';
 import type { Pokemon } from '@/types';
+import React from 'react';
 
 type Props = {
   pokemons: Pokemon[];
@@ -21,7 +21,7 @@ const CandidateGrid: React.FC<Props> = ({ pokemons }) => {
   return (
     <div className="panel">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="text-base font-semibold">候補ポケモン一覧</h3>
+        <h3 className="text-base font-semibold">ポケモン一覧</h3>
         <div className="flex flex-wrap items-center gap-2">
           {types.map((t) => (
             <button

@@ -5,9 +5,17 @@ type Props = {
   pokemons: Pokemon[];
   onConfirm?: (pokemon: Pokemon) => void;
   canConfirm?: boolean;
+  disabledIds?: string[];
+  onSelect?: (pokemon: Pokemon | null) => void;
 };
 
-const CandidateGrid: React.FC<Props> = ({ pokemons, onConfirm, canConfirm = true }) => {
+const CandidateGrid: React.FC<Props> = ({
+  pokemons,
+  onConfirm,
+  canConfirm = true,
+  disabledIds = [],
+  onSelect,
+}) => {
   const [selectedType, setSelectedType] = React.useState<string>('すべて');
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
@@ -26,8 +34,19 @@ const CandidateGrid: React.FC<Props> = ({ pokemons, onConfirm, canConfirm = true
     [pokemons, selectedId]
   );
 
+  // 無効化されたIDが選択中だった場合は解除
+  React.useEffect(() => {
+    if (selectedId && disabledIds.includes(selectedId)) {
+      setSelectedId(null);
+      if (onSelect) onSelect(null);
+    }
+  }, [disabledIds, selectedId]);
+
+  const isSelectedDisabled = selectedPokemon ? disabledIds.includes(selectedPokemon.id) : false;
+  const canPressConfirm = Boolean(selectedPokemon) && canConfirm && !isSelectedDisabled;
+
   const handleConfirm = (): void => {
-    if (selectedPokemon && onConfirm) onConfirm(selectedPokemon);
+    if (selectedPokemon && !isSelectedDisabled && onConfirm) onConfirm(selectedPokemon);
   };
 
   return (
@@ -65,19 +84,29 @@ const CandidateGrid: React.FC<Props> = ({ pokemons, onConfirm, canConfirm = true
       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
         {filtered.map((p) => {
           const isSelected = selectedId === p.id;
+          const isDisabled = disabledIds.includes(p.id);
           return (
             <button
               key={p.id}
               type="button"
-              onClick={() => setSelectedId(p.id)}
+              onClick={() => {
+                if (isDisabled) return;
+                setSelectedId(p.id);
+                if (onSelect) onSelect(p);
+              }}
               className={
-                'group rounded-lg border transition-colors overflow-hidden focus:outline-none focus:ring-2 ' +
-                (isSelected
+                'group relative rounded-lg border transition-colors overflow-hidden focus:outline-none focus:ring-2 ' +
+                (isDisabled
+                  ? 'border-slate-700 bg-slate-800/40 opacity-40 grayscale cursor-not-allowed'
+                  : isSelected
                   ? 'border-indigo-400 bg-indigo-500/10 ring-indigo-400'
                   : 'border-slate-700 bg-slate-800/60 hover:bg-slate-700/60')
               }
+              disabled={isDisabled}
               aria-pressed={isSelected}
               aria-label={p.name}
+              aria-disabled={isDisabled}
+              title={isDisabled ? 'BAN/PICK済みのため選べません' : undefined}
             >
               <div className="aspect-square bg-slate-900/40 flex items-center justify-center">
                 <img
@@ -87,6 +116,11 @@ const CandidateGrid: React.FC<Props> = ({ pokemons, onConfirm, canConfirm = true
                   loading="lazy"
                 />
               </div>
+              {isDisabled && (
+                <span className="absolute top-1 right-1 rounded bg-slate-900/80 px-1.5 py-0.5 text-[10px] text-slate-200">
+                  禁止
+                </span>
+              )}
             </button>
           );
         })}

@@ -9,8 +9,76 @@ import pokemonsData from '../../docs/pokemons.json';
 
 const pokemons = pokemonsData as Pokemon[];
 
+type Team = 'purple' | 'orange';
+type Action = 'ban' | 'pick';
+type Turn = { team: Team; action: Action; index: number } | null;
+
 const App: React.FC = () => {
   const [draftStarted, setDraftStarted] = React.useState<boolean>(false);
+  const [phase, setPhase] = React.useState<string>('—');
+  const [secondsLeft, setSecondsLeft] = React.useState<number>(15);
+  const [activeTurn, setActiveTurn] = React.useState<Turn>(null);
+  const [bans, setBans] = React.useState<{ purple: (Pokemon | null)[]; orange: (Pokemon | null)[] }>(
+    () => ({ purple: [null, null, null], orange: [null, null, null] })
+  );
+  const [picks, setPicks] = React.useState<{ purple: (Pokemon | null)[]; orange: (Pokemon | null)[] }>(
+    () => ({ purple: [null, null, null, null, null], orange: [null, null, null, null, null] })
+  );
+  const [pendingSelection, setPendingSelection] = React.useState<Pokemon | null>(null);
+
+  const timerRef = React.useRef<number | null>(null);
+
+  const startCountdown = React.useCallback(() => {
+    // 15秒からカウントダウン開始
+    setSecondsLeft(15);
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+    }
+    timerRef.current = window.setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          // 0になったら停止（次のロジックは後で実装）
+          if (timerRef.current) window.clearInterval(timerRef.current);
+          timerRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  // クリーンアップ
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) window.clearInterval(timerRef.current);
+    };
+  }, []);
+
+  // タイマー切れ時の自動BAN（現状: パープル BAN1 のみ）
+  React.useEffect(() => {
+    if (!draftStarted) return;
+    if (secondsLeft !== 0) return;
+    if (!activeTurn || activeTurn.team !== 'purple' || activeTurn.action !== 'ban' || activeTurn.index !== 1) return;
+    if (bans.purple[0]) return; // すでに確定済みならスキップ
+
+    // すでにBAN/PICKされたIDを集合化
+    const usedIds = new Set<string>();
+    [...bans.purple, ...bans.orange, ...picks.purple, ...picks.orange].forEach((pp) => {
+      if (pp) usedIds.add(pp.id);
+    });
+
+    // 未使用の中から選択。ユーザーがクリック済みならそれを優先、なければランダム
+    const candidates = pokemons.filter((p) => !usedIds.has(p.id));
+    if (candidates.length === 0) return;
+    const preferred = pendingSelection && !usedIds.has(pendingSelection.id) ? pendingSelection : null;
+    const choice = preferred ?? candidates[Math.floor(Math.random() * candidates.length)];
+
+    setBans((prev) => ({
+      ...prev,
+      purple: prev.purple.map((x, idx) => (idx === 0 ? choice : x)),
+    }));
+    setPendingSelection(null);
+  }, [secondsLeft, activeTurn, draftStarted, bans, picks, pendingSelection]);
 
   return (
     <div className="min-h-screen">
@@ -24,7 +92,17 @@ const App: React.FC = () => {
       <main className="mx-auto max-w-7xl px-4 py-6 space-y-6">
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div>
-            <TeamPanel team="purple" title="パープルチーム（先攻）" />
+            <TeamPanel
+              team="purple"
+              title="パープルチーム（先攻）"
+              activeHighlight={
+                activeTurn?.team === 'purple'
+                  ? { type: activeTurn.action, index: activeTurn.index }
+                  : undefined
+              }
+              bans={bans.purple}
+              picks={picks.purple}
+            />
           </div>
 
           <div className="panel flex flex-col items-center justify-center gap-3">
@@ -32,7 +110,12 @@ const App: React.FC = () => {
               <>
                 <button
                   type="button"
-                  onClick={() => setDraftStarted(true)}
+                  onClick={() => {
+                    setDraftStarted(true);
+                    setPhase('使用禁止フェーズ1');
+                    setActiveTurn({ team: 'purple', action: 'ban', index: 1 });
+                    startCountdown();
+                  }}
                   className="rounded-md bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 >
                   ドラフトピック開始
@@ -41,16 +124,25 @@ const App: React.FC = () => {
             ) : (
               <>
                 <div className="text-sm text-slate-300">現在のフェーズ</div>
-                <div className="text-2xl font-bold">—</div>
+                <div className="text-2xl font-bold">{phase}</div>
                 <div className="text-sm text-slate-300">制限時間</div>
-                <div className="text-3xl font-extrabold tabular-nums">15s</div>
-                <div className="text-xs text-slate-500">操作ロジックは後で実装</div>
+                <div className="text-3xl font-extrabold tabular-nums">{secondsLeft}s</div>
               </>
             )}
           </div>
 
           <div>
-            <TeamPanel team="orange" title="オレンジチーム（後攻）" />
+            <TeamPanel
+              team="orange"
+              title="オレンジチーム（後攻）"
+              activeHighlight={
+                activeTurn?.team === 'orange'
+                  ? { type: activeTurn.action, index: activeTurn.index }
+                  : undefined
+              }
+              bans={bans.orange}
+              picks={picks.orange}
+            />
           </div>
         </section>
 
@@ -58,11 +150,29 @@ const App: React.FC = () => {
           <CandidateGrid
             pokemons={pokemons}
             canConfirm={draftStarted}
+            disabledIds={React.useMemo(() => {
+              const ids: string[] = [];
+              [...bans.purple, ...bans.orange, ...picks.purple, ...picks.orange].forEach((pp) => {
+                if (pp) ids.push(pp.id);
+              });
+              return ids;
+            }, [bans, picks])}
             onConfirm={(p) => {
-              // 現状はデモとしてログ出力のみ
-              // eslint-disable-next-line no-console
-              console.log('選択を確定:', p);
+              // 要件: ドラフト開始後、決定でパープル BAN1 を画像に置換
+              if (
+                activeTurn &&
+                activeTurn.team === 'purple' &&
+                activeTurn.action === 'ban' &&
+                activeTurn.index === 1
+              ) {
+                setBans((prev) => ({
+                  ...prev,
+                  purple: prev.purple.map((x, idx) => (idx === 0 ? p : x)),
+                }));
+                setPendingSelection(null);
+              }
             }}
+            onSelect={(p) => setPendingSelection(p)}
           />
         </section>
       </main>

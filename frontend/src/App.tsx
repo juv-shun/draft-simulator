@@ -47,6 +47,13 @@ const App: React.FC = () => {
     }, 1000);
   }, []);
 
+  const stopTimer = React.useCallback(() => {
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
   // 次のターンへ移行してタイマーを再開
   const gotoTurn = React.useCallback(
     (turn: Exclude<Turn, null>) => {
@@ -63,15 +70,15 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // タイマー切れ時の自動BAN（現状: パープル BAN1 のみ）
+  // タイマー切れ時の自動BAN（使用禁止フェーズ1: BAN1→BAN2まで）
   React.useEffect(() => {
     if (!draftStarted) return;
     if (secondsLeft !== 0) return;
     if (!activeTurn || activeTurn.action !== 'ban') return;
-    // 今回のスコープ: purple BAN1 と orange BAN1 のみ処理
-    if (activeTurn.index !== 1) return;
-    if (activeTurn.team === 'purple' && bans.purple[0]) return; // 確定済み
-    if (activeTurn.team === 'orange' && bans.orange[0]) return; // 確定済み
+    // 今回のスコープ: purple/orange の BAN1, BAN2 まで
+    if (activeTurn.index !== 1 && activeTurn.index !== 2) return;
+    if (activeTurn.team === 'purple' && bans.purple[activeTurn.index - 1]) return; // 確定済み
+    if (activeTurn.team === 'orange' && bans.orange[activeTurn.index - 1]) return; // 確定済み
 
     // すでにBAN/PICKされたIDを集合化
     const usedIds = new Set<string>();
@@ -88,21 +95,32 @@ const App: React.FC = () => {
     if (activeTurn.team === 'purple') {
       setBans((prev) => ({
         ...prev,
-        purple: prev.purple.map((x, idx) => (idx === 0 ? choice : x)),
+        purple: prev.purple.map((x, idx) => (idx === activeTurn.index - 1 ? choice : x)),
       }));
       setPendingSelection(null);
-      // 次のターンへ: オレンジ BAN1
-      gotoTurn({ team: 'orange', action: 'ban', index: 1 });
+      // 次のターンへ
+      if (activeTurn.index === 1) {
+        gotoTurn({ team: 'orange', action: 'ban', index: 1 });
+      } else {
+        gotoTurn({ team: 'orange', action: 'ban', index: 2 });
+      }
     } else if (activeTurn.team === 'orange') {
       setBans((prev) => ({
         ...prev,
-        orange: prev.orange.map((x, idx) => (idx === 0 ? choice : x)),
+        orange: prev.orange.map((x, idx) => (idx === activeTurn.index - 1 ? choice : x)),
       }));
       setPendingSelection(null);
-      // 次のターンへ: パープル BAN2
-      gotoTurn({ team: 'purple', action: 'ban', index: 2 });
+      if (activeTurn.index === 1) {
+        // 次のターン: パープル BAN2
+        gotoTurn({ team: 'purple', action: 'ban', index: 2 });
+      } else {
+        // フェーズ完了（使用禁止フェーズ1）
+        setPhase('使用ポケモン選択フェーズ1');
+        stopTimer();
+        setActiveTurn(null);
+      }
     }
-  }, [secondsLeft, activeTurn, draftStarted, bans, picks, pendingSelection, gotoTurn]);
+  }, [secondsLeft, activeTurn, draftStarted, bans, picks, pendingSelection, gotoTurn, stopTimer]);
 
   return (
     <div className="min-h-screen">
@@ -181,23 +199,34 @@ const App: React.FC = () => {
               return ids;
             }, [bans, picks])}
             onConfirm={(p) => {
-              // BAN1系確定処理（パープル→オレンジ）
+              // BAN1, BAN2 の確定処理
               if (!activeTurn || activeTurn.action !== 'ban') return;
-              if (activeTurn.index !== 1) return;
+              if (activeTurn.index !== 1 && activeTurn.index !== 2) return;
               if (activeTurn.team === 'purple') {
                 setBans((prev) => ({
                   ...prev,
-                  purple: prev.purple.map((x, idx) => (idx === 0 ? p : x)),
+                  purple: prev.purple.map((x, idx) => (idx === activeTurn.index - 1 ? p : x)),
                 }));
                 setPendingSelection(null);
-                gotoTurn({ team: 'orange', action: 'ban', index: 1 });
+                if (activeTurn.index === 1) {
+                  gotoTurn({ team: 'orange', action: 'ban', index: 1 });
+                } else {
+                  gotoTurn({ team: 'orange', action: 'ban', index: 2 });
+                }
               } else if (activeTurn.team === 'orange') {
                 setBans((prev) => ({
                   ...prev,
-                  orange: prev.orange.map((x, idx) => (idx === 0 ? p : x)),
+                  orange: prev.orange.map((x, idx) => (idx === activeTurn.index - 1 ? p : x)),
                 }));
                 setPendingSelection(null);
-                gotoTurn({ team: 'purple', action: 'ban', index: 2 });
+                if (activeTurn.index === 1) {
+                  gotoTurn({ team: 'purple', action: 'ban', index: 2 });
+                } else {
+                  // フェーズ完了（使用禁止フェーズ1）
+                  setPhase('使用ポケモン選択フェーズ1');
+                  stopTimer();
+                  setActiveTurn(null);
+                }
               }
             }}
             onSelect={(p) => setPendingSelection(p)}

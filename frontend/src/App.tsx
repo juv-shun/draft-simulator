@@ -3,9 +3,8 @@ import React from 'react';
 // 遅延読み込みコンポーネントを先に宣言
 const TeamPanel = React.lazy(() => import('./components/TeamPanel'));
 const CandidateGrid = React.lazy(() => import('./components/CandidateGrid'));
-// Viteのfs.allowにより、上位のdocsからJSONをインポート（ビルド時取り込み）
-// 相対パスは src -> frontend -> docs （リポジトリ直下）
-import pokemonsData from '../../docs/pokemons.json';
+// フロントエンド配下のデータをインポート（ビルド時取り込み）
+import pokemonsData from '@/data/pokemons.json';
 
 const pokemons = pokemonsData as Pokemon[];
 

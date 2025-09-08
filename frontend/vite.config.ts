@@ -11,11 +11,5 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-  server: {
-    // docs/ 配下のJSONをビルド時に読み込めるよう上位参照を許可
-    fs: {
-      allow: [path.resolve(__dirname, '..')],
-    },
-  },
+  // docs参照は不要になったため、fs.allowは削除
 });
-

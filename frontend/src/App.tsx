@@ -10,6 +10,8 @@ import pokemonsData from '../../docs/pokemons.json';
 const pokemons = pokemonsData as Pokemon[];
 
 const App: React.FC = () => {
+  const [draftStarted, setDraftStarted] = React.useState<boolean>(false);
+
   return (
     <div className="min-h-screen">
       <header className="border-b border-slate-800 bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/50">
@@ -26,11 +28,25 @@ const App: React.FC = () => {
           </div>
 
           <div className="panel flex flex-col items-center justify-center gap-3">
-            <div className="text-sm text-slate-300">現在のフェーズ</div>
-            <div className="text-2xl font-bold">—</div>
-            <div className="text-sm text-slate-300">制限時間</div>
-            <div className="text-3xl font-extrabold tabular-nums">15s</div>
-            <div className="text-xs text-slate-500">操作ロジックは後で実装</div>
+            {!draftStarted ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setDraftStarted(true)}
+                  className="rounded-md bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                >
+                  ドラフトピック開始
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="text-sm text-slate-300">現在のフェーズ</div>
+                <div className="text-2xl font-bold">—</div>
+                <div className="text-sm text-slate-300">制限時間</div>
+                <div className="text-3xl font-extrabold tabular-nums">15s</div>
+                <div className="text-xs text-slate-500">操作ロジックは後で実装</div>
+              </>
+            )}
           </div>
 
           <div>
@@ -39,7 +55,15 @@ const App: React.FC = () => {
         </section>
 
         <section>
-          <CandidateGrid pokemons={pokemons} />
+          <CandidateGrid
+            pokemons={pokemons}
+            canConfirm={draftStarted}
+            onConfirm={(p) => {
+              // 現状はデモとしてログ出力のみ
+              // eslint-disable-next-line no-console
+              console.log('選択を確定:', p);
+            }}
+          />
         </section>
       </main>
     </div>

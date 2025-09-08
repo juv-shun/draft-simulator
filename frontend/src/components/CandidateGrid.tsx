@@ -3,10 +3,13 @@ import React from 'react';
 
 type Props = {
   pokemons: Pokemon[];
+  onConfirm?: (pokemon: Pokemon) => void;
+  canConfirm?: boolean;
 };
 
-const CandidateGrid: React.FC<Props> = ({ pokemons }) => {
+const CandidateGrid: React.FC<Props> = ({ pokemons, onConfirm, canConfirm = true }) => {
   const [selectedType, setSelectedType] = React.useState<string>('すべて');
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
   const types = React.useMemo<string[]>(() => {
     const set = new Set<string>(pokemons.map((p) => p.type));
@@ -18,11 +21,29 @@ const CandidateGrid: React.FC<Props> = ({ pokemons }) => {
     return pokemons.filter((p) => p.type === selectedType);
   }, [pokemons, selectedType]);
 
+  const selectedPokemon = React.useMemo<Pokemon | null>(
+    () => pokemons.find((p) => p.id === selectedId) ?? null,
+    [pokemons, selectedId]
+  );
+
+  const handleConfirm = (): void => {
+    if (selectedPokemon && onConfirm) onConfirm(selectedPokemon);
+  };
+
   return (
     <div className="panel">
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex items-center gap-3">
         <h3 className="text-base font-semibold">ポケモン一覧</h3>
-        <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={!selectedPokemon || !canConfirm}
+          title={!canConfirm ? 'ドラフト開始後に有効になります' : undefined}
+          className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow enabled:hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          選択を決定
+        </button>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           {types.map((t) => (
             <button
               key={t}
@@ -42,21 +63,33 @@ const CandidateGrid: React.FC<Props> = ({ pokemons }) => {
       </div>
 
       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
-        {filtered.map((p) => (
-          <div
-            key={p.id}
-            className="group rounded-lg border border-slate-700 bg-slate-800/60 hover:bg-slate-700/60 transition-colors overflow-hidden"
-          >
-            <div className="aspect-square bg-slate-900/40 flex items-center justify-center">
-              <img
-                src={p.imageUrl}
-                alt={p.name}
-                className="h-[80%] w-[80%] object-contain"
-                loading="lazy"
-              />
-            </div>
-          </div>
-        ))}
+        {filtered.map((p) => {
+          const isSelected = selectedId === p.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setSelectedId(p.id)}
+              className={
+                'group rounded-lg border transition-colors overflow-hidden focus:outline-none focus:ring-2 ' +
+                (isSelected
+                  ? 'border-indigo-400 bg-indigo-500/10 ring-indigo-400'
+                  : 'border-slate-700 bg-slate-800/60 hover:bg-slate-700/60')
+              }
+              aria-pressed={isSelected}
+              aria-label={p.name}
+            >
+              <div className="aspect-square bg-slate-900/40 flex items-center justify-center">
+                <img
+                  src={p.imageUrl}
+                  alt={p.name}
+                  className="h-[80%] w-[80%] object-contain"
+                  loading="lazy"
+                />
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

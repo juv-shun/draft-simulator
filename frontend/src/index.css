@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* レイアウトの補助 */
+.slot {
+  @apply rounded-md border border-slate-700 bg-slate-800/60 text-slate-200 flex items-center justify-center text-sm h-12;
+}
+.slot-lg {
+  @apply h-16;
+}
+.panel {
+  @apply rounded-lg border border-slate-700 bg-slate-800/50 p-3;
+}

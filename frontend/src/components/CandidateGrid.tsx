@@ -7,6 +7,9 @@ type Props = {
   canConfirm?: boolean;
   disabledIds?: string[];
   onSelect?: (pokemon: Pokemon | null) => void;
+  selectionMode?: 'single' | 'multi2';
+  onConfirmPair?: (pokemons: Pokemon[]) => void;
+  onSelectMulti?: (pokemons: Pokemon[]) => void;
 };
 
 const CandidateGrid: React.FC<Props> = ({
@@ -15,9 +18,13 @@ const CandidateGrid: React.FC<Props> = ({
   canConfirm = true,
   disabledIds = [],
   onSelect,
+  selectionMode = 'single',
+  onConfirmPair,
+  onSelectMulti,
 }) => {
   const [selectedType, setSelectedType] = React.useState<string>('すべて');
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
   const types = React.useMemo<string[]>(() => {
     const set = new Set<string>(pokemons.map((p) => p.type));
@@ -40,12 +47,41 @@ const CandidateGrid: React.FC<Props> = ({
       setSelectedId(null);
       if (onSelect) onSelect(null);
     }
+    if (selectedIds.length > 0) {
+      const filteredIds = selectedIds.filter((id) => !disabledIds.includes(id));
+      if (filteredIds.length !== selectedIds.length) {
+        setSelectedIds(filteredIds);
+        if (onSelect) onSelect(null);
+      }
+    }
   }, [disabledIds, selectedId]);
 
+  // multi2 のときは選択中リストを都度通知
+  React.useEffect(() => {
+    if (selectionMode !== 'multi2') return;
+    if (!onSelectMulti) return;
+    const list: Pokemon[] = selectedIds
+      .map((id) => pokemons.find((pp) => pp.id === id))
+      .filter((x): x is Pokemon => Boolean(x));
+    onSelectMulti(list);
+  }, [selectionMode, selectedIds, onSelectMulti, pokemons]);
+
   const isSelectedDisabled = selectedPokemon ? disabledIds.includes(selectedPokemon.id) : false;
-  const canPressConfirm = Boolean(selectedPokemon) && canConfirm && !isSelectedDisabled;
+  const canPressConfirm =
+    selectionMode === 'multi2'
+      ? selectedIds.length === 2 && canConfirm
+      : Boolean(selectedPokemon) && canConfirm && !isSelectedDisabled;
 
   const handleConfirm = (): void => {
+    if (selectionMode === 'multi2') {
+      if (selectedIds.length === 2 && onConfirmPair) {
+        const list: Pokemon[] = selectedIds
+          .map((id) => pokemons.find((pp) => pp.id === id))
+          .filter((x): x is Pokemon => Boolean(x));
+        if (list.length === 2) onConfirmPair(list);
+      }
+      return;
+    }
     if (selectedPokemon && !isSelectedDisabled && onConfirm) onConfirm(selectedPokemon);
   };
 
@@ -56,7 +92,7 @@ const CandidateGrid: React.FC<Props> = ({
         <button
           type="button"
           onClick={handleConfirm}
-          disabled={!selectedPokemon || !canConfirm}
+          disabled={!canPressConfirm}
           title={!canConfirm ? 'ドラフト開始後に有効になります' : undefined}
           className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow enabled:hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
         >
@@ -83,7 +119,8 @@ const CandidateGrid: React.FC<Props> = ({
 
       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
         {filtered.map((p) => {
-          const isSelected = selectedId === p.id;
+          const isSelected =
+            selectionMode === 'multi2' ? selectedIds.includes(p.id) : selectedId === p.id;
           const isDisabled = disabledIds.includes(p.id);
           return (
             <button
@@ -91,8 +128,33 @@ const CandidateGrid: React.FC<Props> = ({
               type="button"
               onClick={() => {
                 if (isDisabled) return;
-                setSelectedId(p.id);
-                if (onSelect) onSelect(p);
+                if (selectionMode === 'multi2') {
+                  setSelectedIds((prev) => {
+                    // トグル解除
+                    if (prev.includes(p.id)) {
+                      const next = prev.filter((id) => id !== p.id);
+                      if (onSelect) onSelect(next.length ? pokemons.find((x) => x.id === next[next.length - 1]) ?? null : null);
+                      return next;
+                    }
+                    // まだ2未満なら追加
+                    if (prev.length < 2) {
+                      const next = [...prev, p.id];
+                      if (onSelect) onSelect(p);
+                      return next;
+                    }
+                    // 2選択済みで3つ目を選ぶ → 先頭を外し、新しいIDを末尾に
+                    const next = [prev[1], p.id];
+                    if (onSelect) onSelect(p);
+                    return next;
+                  });
+                } else {
+                  // single
+                  setSelectedId((cur) => {
+                    const next = cur === p.id ? null : p.id;
+                    if (onSelect) onSelect(next ? p : null);
+                    return next;
+                  });
+                }
               }}
               className={
                 'group relative rounded-lg border transition-colors overflow-hidden focus:outline-none focus:ring-2 ' +
@@ -116,6 +178,11 @@ const CandidateGrid: React.FC<Props> = ({
                   loading="lazy"
                 />
               </div>
+              {selectionMode === 'multi2' && isSelected && (
+                <span className="absolute top-1 left-1 rounded bg-indigo-600 px-1.5 py-0.5 text-[10px] text-white">
+                  {selectedIds.findIndex((id) => id === p.id) + 1}
+                </span>
+              )}
               {isDisabled && (
                 <span className="absolute top-1 right-1 rounded bg-slate-900/80 px-1.5 py-0.5 text-[10px] text-slate-200">
                   禁止
@@ -125,6 +192,8 @@ const CandidateGrid: React.FC<Props> = ({
           );
         })}
       </div>
+
+      {/* 決定ボタンはヘッダー側に統一 */}
     </div>
   );
 };

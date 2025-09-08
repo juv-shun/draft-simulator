@@ -1,12 +1,13 @@
 import React from 'react';
 import type { Pokemon } from '@/types';
 
-type Highlight = { type: 'ban' | 'pick'; index: number } | null | undefined;
+type Highlight = { type: 'ban' | 'pick'; index: number };
+type HighlightInput = Highlight | Highlight[] | null | undefined;
 
 type Props = {
   team: 'purple' | 'orange';
   title: string;
-  activeHighlight?: Highlight;
+  activeHighlight?: HighlightInput;
   bans?: (Pokemon | null)[];
   picks?: (Pokemon | null)[];
 };
@@ -14,6 +15,11 @@ type Props = {
 const TeamPanel: React.FC<Props> = ({ team, title, activeHighlight, bans = [], picks = [] }) => {
   const color = team === 'purple' ? 'from-fuchsia-500 to-purple-600' : 'from-amber-400 to-orange-500';
   const ringClass = team === 'purple' ? 'ring-fuchsia-300' : 'ring-amber-300';
+  const isActive = (type: Highlight['type'], index: number): boolean => {
+    if (!activeHighlight) return false;
+    const list: Highlight[] = Array.isArray(activeHighlight) ? activeHighlight : [activeHighlight];
+    return list.some((h) => h.type === type && h.index === index);
+  };
   return (
     <div className="panel space-y-4">
       <div
@@ -26,19 +32,19 @@ const TeamPanel: React.FC<Props> = ({ team, title, activeHighlight, bans = [], p
         <h3 className="mb-2 text-sm text-slate-300">使用禁止（BAN）</h3>
         <div className="grid grid-cols-3 gap-2 place-items-center">
           {[1, 2, 3].map((i) => {
-            const isActive = activeHighlight?.type === 'ban' && activeHighlight.index === i;
+            const active = isActive('ban', i);
             const p = bans[i - 1] ?? null;
             return (
               <div
                 key={`ban-${i}`}
                 className={
                   `slot slot-square ${
-                    isActive ? `animate-pulse ring-2 ${ringClass} ring-offset-2 ring-offset-slate-900` : ''
+                    active ? `animate-pulse ring-2 ${ringClass} ring-offset-2 ring-offset-slate-900` : ''
                   }`
                 }
-                aria-live={isActive ? 'polite' : undefined}
-                aria-label={isActive ? `現在のターン: BAN ${i}` : undefined}
-                title={isActive ? '現在のターン' : undefined}
+                aria-live={active ? 'polite' : undefined}
+                aria-label={active ? `現在のターン: BAN ${i}` : undefined}
+                title={active ? '現在のターン' : undefined}
               >
                 {p ? (
                   <img
@@ -59,19 +65,19 @@ const TeamPanel: React.FC<Props> = ({ team, title, activeHighlight, bans = [], p
         <h3 className="mb-2 text-sm text-slate-300">使用ポケモン（PICK）</h3>
         <div className="grid grid-cols-5 gap-2 place-items-center">
           {[1, 2, 3, 4, 5].map((i) => {
-            const isActive = activeHighlight?.type === 'pick' && activeHighlight.index === i;
+            const active = isActive('pick', i);
             const p = picks[i - 1] ?? null;
             return (
               <div
                 key={`pick-${i}`}
                 className={
                   `slot slot-square ${
-                    isActive ? `animate-pulse ring-2 ${ringClass} ring-offset-2 ring-offset-slate-900` : ''
+                    active ? `animate-pulse ring-2 ${ringClass} ring-offset-2 ring-offset-slate-900` : ''
                   }`
                 }
-                aria-live={isActive ? 'polite' : undefined}
-                aria-label={isActive ? `現在のターン: PICK ${i}` : undefined}
-                title={isActive ? '現在のターン' : undefined}
+                aria-live={active ? 'polite' : undefined}
+                aria-label={active ? `現在のターン: PICK ${i}` : undefined}
+                title={active ? '現在のターン' : undefined}
               >
                 {p ? (
                   <img

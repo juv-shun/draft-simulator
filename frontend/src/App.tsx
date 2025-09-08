@@ -25,6 +25,7 @@ const App: React.FC = () => {
     () => ({ purple: [null, null, null, null, null], orange: [null, null, null, null, null] })
   );
   const [pendingSelection, setPendingSelection] = React.useState<Pokemon | null>(null);
+  const [pendingMulti, setPendingMulti] = React.useState<Pokemon[]>([]);
 
   const timerRef = React.useRef<number | null>(null);
 
@@ -127,27 +128,66 @@ const App: React.FC = () => {
     if (!draftStarted) return;
     if (secondsLeft !== 0) return;
     if (!activeTurn || activeTurn.action !== 'pick') return;
-    if (!(activeTurn.team === 'purple' && activeTurn.index === 1)) return;
-    if (picks.purple[0]) return; // 既に確定済み
+    if (activeTurn.team === 'purple' && activeTurn.index === 1) {
+      if (picks.purple[0]) return; // 既に確定済み
 
-    const usedIds = new Set<string>();
-    [...bans.purple, ...bans.orange, ...picks.purple, ...picks.orange].forEach((pp) => {
-      if (pp) usedIds.add(pp.id);
-    });
-    const candidates = pokemons.filter((p) => !usedIds.has(p.id));
-    if (candidates.length === 0) return;
-    const preferred = pendingSelection && !usedIds.has(pendingSelection.id) ? pendingSelection : null;
-    const choice = preferred ?? candidates[Math.floor(Math.random() * candidates.length)];
+      const usedIds = new Set<string>();
+      [...bans.purple, ...bans.orange, ...picks.purple, ...picks.orange].forEach((pp) => {
+        if (pp) usedIds.add(pp.id);
+      });
+      const candidates = pokemons.filter((p) => !usedIds.has(p.id));
+      if (candidates.length === 0) return;
+      const preferred = pendingSelection && !usedIds.has(pendingSelection.id) ? pendingSelection : null;
+      const choice = preferred ?? candidates[Math.floor(Math.random() * candidates.length)];
 
-    setPicks((prev) => ({
-      ...prev,
-      purple: prev.purple.map((x, idx) => (idx === 0 ? choice : x)),
-    }));
-    setPendingSelection(null);
-    // 次の処理（オレンジ PICK1・PICK2）は今回は未実装のため、ここで停止
-    stopTimer();
-    setActiveTurn(null);
-  }, [secondsLeft, activeTurn, draftStarted, bans, picks, pendingSelection, stopTimer]);
+      setPicks((prev) => ({
+        ...prev,
+        purple: prev.purple.map((x, idx) => (idx === 0 ? choice : x)),
+      }));
+      setPendingSelection(null);
+      // 次のターンへ: オレンジ PICK1・PICK2（1ターンで2匹）
+      gotoTurn({ team: 'orange', action: 'pick', index: 1 });
+      return;
+    }
+
+    // オレンジのPICK1・PICK2（1ターンで2匹）タイムアウト処理
+    if (activeTurn.team === 'orange' && activeTurn.index === 1) {
+      if (picks.orange[0] && picks.orange[1]) return;
+
+      const usedIds = new Set<string>();
+      [...bans.purple, ...bans.orange, ...picks.purple, ...picks.orange].forEach((pp) => {
+        if (pp) usedIds.add(pp.id);
+      });
+
+      const result: Pokemon[] = [];
+      // 選択済みを優先
+      pendingMulti.forEach((pp) => {
+        if (!usedIds.has(pp.id) && !result.find((r) => r.id === pp.id) && result.length < 2) {
+          result.push(pp);
+          usedIds.add(pp.id);
+        }
+      });
+
+      // 不足分は未使用からランダム補完
+      const candidates = pokemons.filter((p) => !usedIds.has(p.id));
+      while (result.length < 2 && candidates.length > 0) {
+        const idx = Math.floor(Math.random() * candidates.length);
+        const choice = candidates.splice(idx, 1)[0];
+        result.push(choice);
+      }
+      if (result.length < 2) return; // 念のため安全策
+
+      setPicks((prev) => ({
+        ...prev,
+        orange: prev.orange.map((x, idx) => (idx === 0 ? result[0] : idx === 1 ? result[1] : x)),
+      }));
+      setPendingSelection(null);
+      setPendingMulti([]);
+      // 次の処理（パープル PICK2・PICK3）は未実装のため停止
+      stopTimer();
+      setActiveTurn(null);
+    }
+  }, [secondsLeft, activeTurn, draftStarted, bans, picks, pendingSelection, pendingMulti, stopTimer, gotoTurn]);
 
   return (
     <div className="min-h-screen">
@@ -166,7 +206,9 @@ const App: React.FC = () => {
               title="パープルチーム（先攻）"
               activeHighlight={
                 activeTurn?.team === 'purple'
-                  ? { type: activeTurn.action, index: activeTurn.index }
+                  ? activeTurn.action === 'pick' && activeTurn.index === 1
+                    ? { type: 'pick', index: 1 }
+                    : { type: activeTurn.action, index: activeTurn.index }
                   : undefined
               }
               bans={bans.purple}
@@ -205,7 +247,12 @@ const App: React.FC = () => {
               title="オレンジチーム（後攻）"
               activeHighlight={
                 activeTurn?.team === 'orange'
-                  ? { type: activeTurn.action, index: activeTurn.index }
+                  ? activeTurn.action === 'pick' && activeTurn.index === 1
+                    ? [
+                        { type: 'pick', index: 1 },
+                        { type: 'pick', index: 2 },
+                      ]
+                    : { type: activeTurn.action, index: activeTurn.index }
                   : undefined
               }
               bans={bans.orange}
@@ -263,13 +310,34 @@ const App: React.FC = () => {
                     purple: prev.purple.map((x, idx) => (idx === 0 ? p : x)),
                   }));
                   setPendingSelection(null);
-                  // 次の処理は未実装のため、ここで一旦停止
-                  stopTimer();
-                  setActiveTurn(null);
+                  // 次のターンへ: オレンジ PICK1・PICK2（1ターンで2匹）
+                  gotoTurn({ team: 'orange', action: 'pick', index: 1 });
                 }
               }
             }}
             onSelect={(p) => setPendingSelection(p)}
+            selectionMode={
+              activeTurn?.action === 'pick' && activeTurn.team === 'orange' && activeTurn.index === 1
+                ? 'multi2'
+                : 'single'
+            }
+            onConfirmPair={(pair) => {
+              // 使用ポケモン選択フェーズ1: オレンジのPICK1・PICK2（1ターンで2匹）
+              if (!activeTurn) return;
+              if (activeTurn.action === 'pick' && activeTurn.team === 'orange' && activeTurn.index === 1) {
+                if (pair.length !== 2) return;
+                setPicks((prev) => ({
+                  ...prev,
+                  orange: prev.orange.map((x, idx) => (idx === 0 ? pair[0] : idx === 1 ? pair[1] : x)),
+                }));
+                setPendingSelection(null);
+                setPendingMulti([]);
+                // 次の処理（パープル PICK2・PICK3）は未実装のため一旦停止
+                stopTimer();
+                setActiveTurn(null);
+              }
+            }}
+            onSelectMulti={(list) => setPendingMulti(list)}
           />
         </section>
       </main>

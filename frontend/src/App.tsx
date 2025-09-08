@@ -58,6 +58,7 @@ const App: React.FC = () => {
   const gotoTurn = React.useCallback(
     (turn: Exclude<Turn, null>) => {
       setActiveTurn(turn);
+      setPendingSelection(null);
       startCountdown();
     },
     [startCountdown]
@@ -114,13 +115,39 @@ const App: React.FC = () => {
         // 次のターン: パープル BAN2
         gotoTurn({ team: 'purple', action: 'ban', index: 2 });
       } else {
-        // フェーズ完了（使用禁止フェーズ1）
+        // 使用禁止フェーズ1完了 → 使用ポケモン選択フェーズ1の開始（パープル PICK1）
         setPhase('使用ポケモン選択フェーズ1');
-        stopTimer();
-        setActiveTurn(null);
+        gotoTurn({ team: 'purple', action: 'pick', index: 1 });
       }
     }
   }, [secondsLeft, activeTurn, draftStarted, bans, picks, pendingSelection, gotoTurn, stopTimer]);
+
+  // タイマー切れ時の自動PICK（使用ポケモン選択フェーズ1: パープル PICK1 のみ）
+  React.useEffect(() => {
+    if (!draftStarted) return;
+    if (secondsLeft !== 0) return;
+    if (!activeTurn || activeTurn.action !== 'pick') return;
+    if (!(activeTurn.team === 'purple' && activeTurn.index === 1)) return;
+    if (picks.purple[0]) return; // 既に確定済み
+
+    const usedIds = new Set<string>();
+    [...bans.purple, ...bans.orange, ...picks.purple, ...picks.orange].forEach((pp) => {
+      if (pp) usedIds.add(pp.id);
+    });
+    const candidates = pokemons.filter((p) => !usedIds.has(p.id));
+    if (candidates.length === 0) return;
+    const preferred = pendingSelection && !usedIds.has(pendingSelection.id) ? pendingSelection : null;
+    const choice = preferred ?? candidates[Math.floor(Math.random() * candidates.length)];
+
+    setPicks((prev) => ({
+      ...prev,
+      purple: prev.purple.map((x, idx) => (idx === 0 ? choice : x)),
+    }));
+    setPendingSelection(null);
+    // 次の処理（オレンジ PICK1・PICK2）は今回は未実装のため、ここで停止
+    stopTimer();
+    setActiveTurn(null);
+  }, [secondsLeft, activeTurn, draftStarted, bans, picks, pendingSelection, stopTimer]);
 
   return (
     <div className="min-h-screen">
@@ -199,31 +226,44 @@ const App: React.FC = () => {
               return ids;
             }, [bans, picks])}
             onConfirm={(p) => {
-              // BAN1, BAN2 の確定処理
-              if (!activeTurn || activeTurn.action !== 'ban') return;
-              if (activeTurn.index !== 1 && activeTurn.index !== 2) return;
-              if (activeTurn.team === 'purple') {
-                setBans((prev) => ({
-                  ...prev,
-                  purple: prev.purple.map((x, idx) => (idx === activeTurn.index - 1 ? p : x)),
-                }));
-                setPendingSelection(null);
-                if (activeTurn.index === 1) {
-                  gotoTurn({ team: 'orange', action: 'ban', index: 1 });
-                } else {
-                  gotoTurn({ team: 'orange', action: 'ban', index: 2 });
+              if (!activeTurn) return;
+              if (activeTurn.action === 'ban') {
+                // BAN1, BAN2 の確定処理
+                if (activeTurn.index !== 1 && activeTurn.index !== 2) return;
+                if (activeTurn.team === 'purple') {
+                  setBans((prev) => ({
+                    ...prev,
+                    purple: prev.purple.map((x, idx) => (idx === activeTurn.index - 1 ? p : x)),
+                  }));
+                  setPendingSelection(null);
+                  if (activeTurn.index === 1) {
+                    gotoTurn({ team: 'orange', action: 'ban', index: 1 });
+                  } else {
+                    gotoTurn({ team: 'orange', action: 'ban', index: 2 });
+                  }
+                } else if (activeTurn.team === 'orange') {
+                  setBans((prev) => ({
+                    ...prev,
+                    orange: prev.orange.map((x, idx) => (idx === activeTurn.index - 1 ? p : x)),
+                  }));
+                  setPendingSelection(null);
+                  if (activeTurn.index === 1) {
+                    gotoTurn({ team: 'purple', action: 'ban', index: 2 });
+                  } else {
+                    // 使用禁止フェーズ1完了 → 使用ポケモン選択フェーズ1開始（パープル PICK1）
+                    setPhase('使用ポケモン選択フェーズ1');
+                    gotoTurn({ team: 'purple', action: 'pick', index: 1 });
+                  }
                 }
-              } else if (activeTurn.team === 'orange') {
-                setBans((prev) => ({
-                  ...prev,
-                  orange: prev.orange.map((x, idx) => (idx === activeTurn.index - 1 ? p : x)),
-                }));
-                setPendingSelection(null);
-                if (activeTurn.index === 1) {
-                  gotoTurn({ team: 'purple', action: 'ban', index: 2 });
-                } else {
-                  // フェーズ完了（使用禁止フェーズ1）
-                  setPhase('使用ポケモン選択フェーズ1');
+              } else if (activeTurn.action === 'pick') {
+                // 使用ポケモン選択フェーズ1: パープル PICK1 のみ
+                if (activeTurn.team === 'purple' && activeTurn.index === 1) {
+                  setPicks((prev) => ({
+                    ...prev,
+                    purple: prev.purple.map((x, idx) => (idx === 0 ? p : x)),
+                  }));
+                  setPendingSelection(null);
+                  // 次の処理は未実装のため、ここで一旦停止
                   stopTimer();
                   setActiveTurn(null);
                 }

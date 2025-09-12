@@ -41,6 +41,7 @@ logs/
 .yarn/
 .pnpm/
 .eslintcache
+.firebase/
 
 # TypeScript
 *.tsbuildinfo

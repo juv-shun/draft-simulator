@@ -65,6 +65,13 @@ const App: React.FC = () => {
               <>
                 <div className="text-sm text-slate-300">現在のフェーズ</div>
                 <div className="text-2xl font-bold">{ctrl.phaseLabel}</div>
+                <div className="text-sm">
+                  {ctrl.canConfirm ? (
+                    <span className="rounded bg-emerald-700/40 text-emerald-200 px-2 py-0.5">あなたのターン</span>
+                  ) : (
+                    <span className="rounded bg-slate-700/60 text-slate-200 px-2 py-0.5">相手のターン</span>
+                  )}
+                </div>
                 <div className="text-sm text-slate-300">制限時間</div>
                 <div className="text-3xl font-extrabold tabular-nums">
                   {ctrl.state.secondsLeft}s

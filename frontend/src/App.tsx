@@ -42,7 +42,7 @@ const App: React.FC = () => {
           <div>
             <TeamPanel
               team="purple"
-              title="パープルチーム（先攻）"
+              title="先攻チーム"
               activeHighlight={ctrl.highlights.purple ?? undefined}
               bans={ctrl.state.bans.purple}
               picks={ctrl.state.picks.purple}
@@ -70,7 +70,7 @@ const App: React.FC = () => {
           <div>
             <TeamPanel
               team="orange"
-              title="オレンジチーム（後攻）"
+              title="後攻チーム"
               activeHighlight={ctrl.highlights.orange ?? undefined}
               bans={ctrl.state.bans.orange}
               picks={ctrl.state.picks.orange}

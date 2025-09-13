@@ -1,8 +1,8 @@
 import React from 'react';
-import { doc, onSnapshot, type DocumentData } from 'firebase/firestore';
-import type { Team } from '@/types';
-import type { RoomMock, SeatMock } from '@/lobby/types';
+import { doc, onSnapshot } from 'firebase/firestore';
+import type { RoomMock } from '@/lobby/types';
 import { getFirestoreDb } from '@/lib/firebase';
+import { mapRoom } from '@/lobby/roomMapper';
 
 function toSeatMock(raw: any): SeatMock {
   const uid = (raw?.uid ?? null) as string | null;

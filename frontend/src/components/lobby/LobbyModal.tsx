@@ -42,7 +42,8 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
   const remoteMode = open && Boolean(roomId);
 
   // Remote: 匿名Auth + Firestore購読（読み取りのみ）
-  const { uid, loading: authLoading, error: authError } = useAnonAuth(remoteMode);
+  // ルーム未作成時でもサインインが必要なため、モーダルが開いたら有効化
+  const { uid, loading: authLoading, error: authError } = useAnonAuth(open);
   const {
     room: remoteRoom,
     loading: roomLoading,

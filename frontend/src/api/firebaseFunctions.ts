@@ -1,6 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { getFunctionsClient } from '@/lib/firebase';
 import type { Team } from '@/types';
+import { toServerTeam } from '@/lib/team';
 
 export async function apiCreateRoom(turnSeconds?: number): Promise<{ roomId: string }> {
   const fns = getFunctionsClient();
@@ -15,7 +16,7 @@ export async function apiClaimSeat(roomId: string, team: Team, displayName: stri
     fns,
     'claimSeat'
   );
-  await call({ roomId, team: team === 'purple' ? 'PURPLE' : 'ORANGE', displayName });
+  await call({ roomId, team: toServerTeam(team), displayName });
 }
 
 export async function apiStartDraft(roomId: string): Promise<{ ok: true; deadline: number; turnIndex: number }> {
@@ -28,5 +29,5 @@ export async function apiStartDraft(roomId: string): Promise<{ ok: true; deadlin
 export async function apiLeaveSeat(roomId: string, team: Team): Promise<void> {
   const fns = getFunctionsClient();
   const call = httpsCallable<{ roomId: string; team: 'PURPLE' | 'ORANGE' }, { ok: true }>(fns, 'leaveSeat');
-  await call({ roomId, team: team === 'purple' ? 'PURPLE' : 'ORANGE' });
+  await call({ roomId, team: toServerTeam(team) });
 }

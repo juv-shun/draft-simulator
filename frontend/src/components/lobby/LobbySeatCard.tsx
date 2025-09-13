@@ -1,6 +1,7 @@
 import type { SeatMock } from '@/lobby/types';
 import type { Team } from '@/types';
 import React from 'react';
+import { useImeText } from '@/hooks/useImeText';
 
 type Props = {
   team: Team;
@@ -28,8 +29,9 @@ const LobbySeatCard: React.FC<Props> = ({
   const color =
     team === 'purple' ? 'from-fuchsia-500 to-purple-600' : 'from-amber-400 to-orange-500';
   const title = team === 'purple' ? '先攻' : '後攻';
-  const [value, setValue] = React.useState<string>(seat.displayName ?? '');
-  const [composing, setComposing] = React.useState<boolean>(false);
+  const { value, setValue, composing, onChange, onCompositionStart, onCompositionEnd } = useImeText(
+    seat.displayName ?? ''
+  );
 
   // 外部からの表示名更新を取り込む（編集中は上書きしない）
   React.useEffect(() => {
@@ -43,14 +45,8 @@ const LobbySeatCard: React.FC<Props> = ({
   }, [seat.displayName]);
 
   const handleChange = (next: string): void => {
-    setValue(next);
+    onChange(next);
     if (!composing) onChangeName(next);
-  };
-
-  const handleCompositionStart = (): void => setComposing(true);
-  const handleCompositionEnd = (): void => {
-    setComposing(false);
-    onChangeName(value);
   };
 
   const handleBlur = (): void => {
@@ -70,8 +66,8 @@ const LobbySeatCard: React.FC<Props> = ({
           placeholder="表示名"
           value={value}
           onChange={(e) => handleChange(e.target.value)}
-          onCompositionStart={handleCompositionStart}
-          onCompositionEnd={handleCompositionEnd}
+          onCompositionStart={onCompositionStart}
+          onCompositionEnd={onCompositionEnd}
           onBlur={handleBlur}
           className="flex-1 rounded-md border border-slate-700 bg-slate-800/60 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />

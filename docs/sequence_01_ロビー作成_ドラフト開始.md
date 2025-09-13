@@ -12,10 +12,10 @@ sequenceDiagram
 
     Host->>HostClient: トップページにアクセス
     Note over HostClient: SPAをクライアントレンダリング（Firebase Hosting/静的配信）
-    HostClient->>Auth: 匿名サインイン（サイレント）
-    Auth-->>HostClient: uid 発行
 
-    Host->>HostClient: 「ロビー作成」をクリック
+    Host->>HostClient: 「２人プレイ」をクリック
+    HostClient->>Auth: 匿名サインイン（2P操作直前）
+    Auth-->>HostClient: uid 発行
     HostClient->>Func: createRoom(config?) 呼び出し
     Func->>DB: rooms ドキュメント作成<br />{ roomId, seats: {PURPLE,ORANGE},<br />  state: 初期値, config, createdAt }
     Func-->>HostClient: { roomId }
@@ -32,7 +32,7 @@ sequenceDiagram
     Note over Host: オレンジ代表へ部屋URLを共有
 
     Orange->>OrangeClient: 部屋URLを開く（SPA起動）
-    OrangeClient->>Auth: 匿名サインイン（サイレント）
+    OrangeClient->>Auth: 匿名サインイン（2P操作直前）
     Auth-->>OrangeClient: uid 発行
     OrangeClient->>DB: onSnapshot 購読開始（rooms/{roomId}）
     DB-->>OrangeClient: スナップショット（現状: 紫着席/橙未着席）

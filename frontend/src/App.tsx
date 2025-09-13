@@ -2,6 +2,7 @@ import React from 'react';
 import type { Pokemon } from '@/types';
 import pokemonsData from '@/data/pokemons.json';
 import useDraftControllerLocal from './draft/useDraftControllerLocal';
+import useDraftControllerRemote from './draft/useDraftControllerRemote';
 import ModeSelectModal from '@/components/ModeSelectModal';
 import LobbyModal from '@/components/lobby/LobbyModal';
 
@@ -11,8 +12,10 @@ const CandidateGrid = React.lazy(() => import('./components/CandidateGrid'));
 const pokemons = pokemonsData as Pokemon[];
 
 const App: React.FC = () => {
-  const ctrl = useDraftControllerLocal(pokemons);
   const [mode, setMode] = React.useState<'1p' | '2p' | null>(null);
+  const ctrlLocal = useDraftControllerLocal(pokemons);
+  const ctrlRemote = useDraftControllerRemote(pokemons);
+  const ctrl = mode === '2p' ? ctrlRemote : ctrlLocal;
   const [showModeSelect, setShowModeSelect] = React.useState(true);
   const [showLobby, setShowLobby] = React.useState(false);
 
@@ -80,6 +83,7 @@ const App: React.FC = () => {
           <CandidateGrid
             pokemons={pokemons}
             canConfirm={ctrl.canConfirm}
+            canSelect={mode === '2p' ? ctrl.canConfirm : true}
             disabledIds={ctrl.disabledIds}
             onConfirm={(p) => ctrl.confirm(p)}
             onSelect={(p) => ctrl.select(p)}

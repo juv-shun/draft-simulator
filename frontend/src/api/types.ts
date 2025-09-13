@@ -10,3 +10,8 @@ export type StartDraftResponse = {
 
 export type OkResponse = { ok: true };
 
+export type ApplyActionResponse = {
+  ok: true;
+  deadline: number;
+  turnIndex: number;
+};

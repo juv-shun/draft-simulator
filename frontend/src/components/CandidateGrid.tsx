@@ -5,6 +5,7 @@ type Props = {
   pokemons: Pokemon[];
   onConfirm?: (pokemon: Pokemon) => void;
   canConfirm?: boolean;
+  canSelect?: boolean;
   disabledIds?: string[];
   onSelect?: (pokemon: Pokemon | null) => void;
   selectionMode?: 'single' | 'multi2';
@@ -16,6 +17,7 @@ const CandidateGrid: React.FC<Props> = ({
   pokemons,
   onConfirm,
   canConfirm = true,
+  canSelect = true,
   disabledIds = [],
   onSelect,
   selectionMode = 'single',
@@ -121,7 +123,7 @@ const CandidateGrid: React.FC<Props> = ({
         {filtered.map((p) => {
           const isSelected =
             selectionMode === 'multi2' ? selectedIds.includes(p.id) : selectedId === p.id;
-          const isDisabled = disabledIds.includes(p.id);
+          const isDisabled = disabledIds.includes(p.id) || !canSelect;
           return (
             <button
               key={p.id}

@@ -150,11 +150,12 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                   />
                 )}
                 {(() => {
-                  const bothSeated =
-                    (roomForView ?? remoteRoom)!.seats.purple.occupied &&
-                    (roomForView ?? remoteRoom)!.seats.orange.occupied;
-                  const isHost = uid && remoteRoom.hostUid && uid === remoteRoom.hostUid;
-                  const canStart = Boolean(bothSeated && isHost);
+                  // 開始条件は必ずサーバ実体(remoteRoom)に基づいて判定（楽観状態は使わない）
+                  const bothSeatedRemote = Boolean(
+                    remoteRoom?.seats.purple.occupied && remoteRoom?.seats.orange.occupied,
+                  );
+                  const isHost = Boolean(uid && remoteRoom?.hostUid && uid === remoteRoom.hostUid);
+                  const canStart = Boolean(bothSeatedRemote && isHost);
                   return (
                     <StartButton
                       disabled={!canStart}

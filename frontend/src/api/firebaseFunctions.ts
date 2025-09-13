@@ -2,7 +2,7 @@ import { httpsCallable } from 'firebase/functions';
 import { getFunctionsClient } from '@/lib/firebase';
 import type { Team } from '@/types';
 import { toServerTeam } from '@/lib/team';
-import type { CreateRoomResponse, OkResponse, StartDraftResponse } from '@/api/types';
+import type { CreateRoomResponse, OkResponse, StartDraftResponse, ApplyActionResponse } from '@/api/types';
 
 export async function apiCreateRoom(turnSeconds?: number): Promise<CreateRoomResponse> {
   const fns = getFunctionsClient();
@@ -31,4 +31,17 @@ export async function apiLeaveSeat(roomId: string, team: Team): Promise<void> {
   const fns = getFunctionsClient();
   const call = httpsCallable<{ roomId: string; team: 'PURPLE' | 'ORANGE' }, OkResponse>(fns, 'leaveSeat');
   await call({ roomId, team: toServerTeam(team) });
+}
+
+export async function apiApplyAction(
+  roomId: string,
+  action: { kind: 'ban' | 'pick'; ids: string[] },
+): Promise<ApplyActionResponse> {
+  const fns = getFunctionsClient();
+  const call = httpsCallable<{ roomId: string; action: { kind: 'ban' | 'pick'; ids: string[] } }, ApplyActionResponse>(
+    fns,
+    'applyAction',
+  );
+  const res = await call({ roomId, action });
+  return res.data;
 }

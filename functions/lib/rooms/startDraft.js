@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db, serverTimestamp } from '../lib/firestore.js';
+import { scheduleTurnTimeout } from './tasks.js';
 export const startDraft = onCall({
     cors: true,
     region: 'us-central1',
@@ -43,6 +44,12 @@ export const startDraft = onCall({
             updatedAt: serverTimestamp(),
         });
     });
-    // Cloud Tasks 予約はフェーズ5で実装。ここでは deadline の返却のみ。
+    // Cloud Tasks 予約（スタブ）。本番では ETA=deadline-now で予約する。
+    try {
+        await scheduleTurnTimeout(roomId, turnIndex, deadline - now);
+    }
+    catch (e) {
+        console.error('Failed to schedule timeout task:', e);
+    }
     return { ok: true, deadline, turnIndex };
 });

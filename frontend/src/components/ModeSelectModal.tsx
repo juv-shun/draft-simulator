@@ -34,12 +34,9 @@ const ModeSelectModal: React.FC<Props> = ({ open, onSelect1P, onSelect2P }) => {
             onClick={onSelect2P}
             className="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
           >
-            2人プレイ（ロビー表示）
+            2人プレイ（ロビー作成）
           </button>
         </div>
-        <p className="text-xs text-slate-400">
-          2人プレイはローカルモックです。将来Firebaseに置換予定。
-        </p>
       </div>
     </Overlay>
   );

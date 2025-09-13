@@ -1,11 +1,11 @@
-import React from 'react';
+import { apiClaimSeat, apiCreateRoom, apiLeaveSeat, apiStartDraft } from '@/api/firebaseFunctions';
+import { useAnonAuth } from '@/auth/useAnonAuth';
+import CopyToClipboardButton from '@/components/common/CopyToClipboardButton';
 import type { RoomMock, SeatMock } from '@/lobby/types';
 import { useLobbyMock } from '@/lobby/useLobbyMock';
-import LobbySeatCard from './LobbySeatCard';
-import CopyToClipboardButton from '@/components/common/CopyToClipboardButton';
-import { useAnonAuth } from '@/auth/useAnonAuth';
 import { useLobbyRemote } from '@/lobby/useLobbyRemote';
-import { apiCreateRoom, apiClaimSeat, apiStartDraft, apiLeaveSeat } from '@/api/firebaseFunctions';
+import React from 'react';
+import LobbySeatCard from './LobbySeatCard';
 
 type Props = {
   open: boolean;
@@ -20,7 +20,8 @@ const Overlay: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 function buildRoomUrl(room: RoomMock): string {
-  const base = typeof window !== 'undefined' ? window.location.origin + window.location.pathname : '';
+  const base =
+    typeof window !== 'undefined' ? window.location.origin + window.location.pathname : '';
   const query = `?mode=2p&roomId=${encodeURIComponent(room.id)}`;
   return `${base}${query}`;
 }
@@ -81,7 +82,8 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
   }, [remoteRoom]);
 
   // Mock: 既存のローカル挙動
-  const { room, createRoom, claimSeat, leaveSeat, setDisplayName, canStart, myUid } = useLobbyMock();
+  const { room, createRoom, claimSeat, leaveSeat, setDisplayName, canStart, myUid } =
+    useLobbyMock();
 
   React.useEffect(() => {
     if (!open || remoteMode) return;
@@ -126,7 +128,8 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
         }
         setRoomId(id);
         try {
-          if (typeof window !== 'undefined') window.sessionStorage.setItem(guardKey, `created:${Date.now()}`);
+          if (typeof window !== 'undefined')
+            window.sessionStorage.setItem(guardKey, `created:${Date.now()}`);
         } catch {}
       } catch (e) {
         creatingRef.current = false;
@@ -143,14 +146,14 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
     <Overlay>
       <div className="panel space-y-4">
         <div className="flex items-center">
-          <h2 className="text-lg font-semibold">
-            2人プレイ ロビー{remoteMode ? '（Firebase 読み取り）' : '（モック）'}
-          </h2>
+          <h2 className="text-lg font-semibold">ロビー</h2>
         </div>
 
         {isFirebaseEnabled && !roomId && devClientWrites ? (
           <div className="space-y-3">
-            <div className="text-sm text-slate-300">Firebase のロビーが未指定です。新規に作成できます。</div>
+            <div className="text-sm text-slate-300">
+              Firebase のロビーが未指定です。新規に作成できます。
+            </div>
             <button
               type="button"
               onClick={async () => {
@@ -182,7 +185,9 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                 <div className="rounded-md border border-slate-700 bg-slate-800/60 p-3 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="font-mono">roomId: {remoteRoom.id}</div>
-                    <div className="ml-auto text-xs text-slate-400">作成時刻: {new Date(remoteRoom.createdAt).toLocaleString()}</div>
+                    <div className="ml-auto text-xs text-slate-400">
+                      作成時刻: {new Date(remoteRoom.createdAt).toLocaleString()}
+                    </div>
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <div className="truncate text-xs">部屋URL: {buildRoomUrl(remoteRoom)}</div>
@@ -192,101 +197,115 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                 {devWritesEnabled || !devClientWrites ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {(() => {
-                      const isHost = Boolean(uid && remoteRoom.hostUid && uid === remoteRoom.hostUid);
-                      const canLeavePurple = isHost || ((roomForView ?? remoteRoom)!.seats.purple.uid === uid);
-                      const canLeaveOrange = isHost || ((roomForView ?? remoteRoom)!.seats.orange.uid === uid);
-                      const leaveReason = isHost ? undefined : '自分の席以外は離席できません（ホストのみ可能）';
+                      const isHost = Boolean(
+                        uid && remoteRoom.hostUid && uid === remoteRoom.hostUid,
+                      );
+                      const canLeavePurple =
+                        isHost || (roomForView ?? remoteRoom)!.seats.purple.uid === uid;
+                      const canLeaveOrange =
+                        isHost || (roomForView ?? remoteRoom)!.seats.orange.uid === uid;
+                      const leaveReason = isHost
+                        ? undefined
+                        : '自分の席以外は離席できません（ホストのみ可能）';
                       return (
                         <>
-                        <LobbySeatCard
-                          team="purple"
-                          seat={(roomForView ?? remoteRoom)!.seats.purple}
-                          onClaim={async (name) => {
-                            if (devClientWrites) return claimSeatDev('purple', name ?? '');
-                            if (!roomId || !name) return;
-                        // 楽観反映
-                        if (uid) {
-                          setOptimistic((cur) => ({
-                            ...cur,
-                            purple: { occupied: true, displayName: name, uid },
-                          }));
-                        }
-                        try {
-                          await apiClaimSeat(roomId, 'purple', name);
-                        } catch (e) {
-                          // 失敗時はロールバック
-                          setOptimistic((cur) => ({ ...cur, purple: undefined }));
-                          throw e;
-                        }
-                      }}
-                          onLeave={async () => {
-                            if (devClientWrites) return leaveSeatDev('purple');
-                            if (!roomId) return;
-                            // 楽観反映（displayNameは保持）
-                            const current = (roomForView ?? remoteRoom)!.seats.purple;
-                            setOptimistic((cur) => ({
-                              ...cur,
-                              purple: { occupied: false, displayName: current.displayName ?? null, uid: null },
-                            }));
-                            try {
-                              await apiLeaveSeat(roomId, 'purple');
-                            } catch (e) {
-                              // ロールバック
-                              setOptimistic((cur) => ({ ...cur, purple: undefined }));
-                              throw e;
-                            }
-                          }}
-                          onChangeName={(name) => {
-                            if (devClientWrites) return setDisplayNameDev('purple', name);
-                            // Functions経由は確定時に claimSeat のみ使用
-                          }}
-                          canLeave={canLeavePurple}
-                          leaveDisabledReason={leaveReason}
-                          disableClaim={remoteRoom.seats.orange.uid === uid}
-                          disableClaimReason="同一ユーザーは両席に着席できません"
-                        />
-                        <LobbySeatCard
-                          team="orange"
-                          seat={(roomForView ?? remoteRoom)!.seats.orange}
-                          onClaim={async (name) => {
-                            if (devClientWrites) return claimSeatDev('orange', name ?? '');
-                            if (!roomId || !name) return;
-                            if (uid) {
+                          <LobbySeatCard
+                            team="purple"
+                            seat={(roomForView ?? remoteRoom)!.seats.purple}
+                            onClaim={async (name) => {
+                              if (devClientWrites) return claimSeatDev('purple', name ?? '');
+                              if (!roomId || !name) return;
+                              // 楽観反映
+                              if (uid) {
+                                setOptimistic((cur) => ({
+                                  ...cur,
+                                  purple: { occupied: true, displayName: name, uid },
+                                }));
+                              }
+                              try {
+                                await apiClaimSeat(roomId, 'purple', name);
+                              } catch (e) {
+                                // 失敗時はロールバック
+                                setOptimistic((cur) => ({ ...cur, purple: undefined }));
+                                throw e;
+                              }
+                            }}
+                            onLeave={async () => {
+                              if (devClientWrites) return leaveSeatDev('purple');
+                              if (!roomId) return;
+                              // 楽観反映（displayNameは保持）
+                              const current = (roomForView ?? remoteRoom)!.seats.purple;
                               setOptimistic((cur) => ({
                                 ...cur,
-                                orange: { occupied: true, displayName: name, uid },
+                                purple: {
+                                  occupied: false,
+                                  displayName: current.displayName ?? null,
+                                  uid: null,
+                                },
                               }));
-                            }
-                            try {
-                              await apiClaimSeat(roomId, 'orange', name);
-                            } catch (e) {
-                              setOptimistic((cur) => ({ ...cur, orange: undefined }));
-                              throw e;
-                            }
-                          }}
-                          onLeave={async () => {
-                            if (devClientWrites) return leaveSeatDev('orange');
-                            if (!roomId) return;
-                            const current = (roomForView ?? remoteRoom)!.seats.orange;
-                            setOptimistic((cur) => ({
-                              ...cur,
-                              orange: { occupied: false, displayName: current.displayName ?? null, uid: null },
-                            }));
-                            try {
-                              await apiLeaveSeat(roomId, 'orange');
-                            } catch (e) {
-                              setOptimistic((cur) => ({ ...cur, orange: undefined }));
-                              throw e;
-                            }
-                          }}
-                          onChangeName={(name) => {
-                            if (devClientWrites) return setDisplayNameDev('orange', name);
-                          }}
-                          canLeave={canLeaveOrange}
-                          leaveDisabledReason={leaveReason}
-                          disableClaim={remoteRoom.seats.purple.uid === uid}
-                          disableClaimReason="同一ユーザーは両席に着席できません"
-                        />
+                              try {
+                                await apiLeaveSeat(roomId, 'purple');
+                              } catch (e) {
+                                // ロールバック
+                                setOptimistic((cur) => ({ ...cur, purple: undefined }));
+                                throw e;
+                              }
+                            }}
+                            onChangeName={(name) => {
+                              if (devClientWrites) return setDisplayNameDev('purple', name);
+                              // Functions経由は確定時に claimSeat のみ使用
+                            }}
+                            canLeave={canLeavePurple}
+                            leaveDisabledReason={leaveReason}
+                            disableClaim={remoteRoom.seats.orange.uid === uid}
+                            disableClaimReason="同一ユーザーは両席に着席できません"
+                          />
+                          <LobbySeatCard
+                            team="orange"
+                            seat={(roomForView ?? remoteRoom)!.seats.orange}
+                            onClaim={async (name) => {
+                              if (devClientWrites) return claimSeatDev('orange', name ?? '');
+                              if (!roomId || !name) return;
+                              if (uid) {
+                                setOptimistic((cur) => ({
+                                  ...cur,
+                                  orange: { occupied: true, displayName: name, uid },
+                                }));
+                              }
+                              try {
+                                await apiClaimSeat(roomId, 'orange', name);
+                              } catch (e) {
+                                setOptimistic((cur) => ({ ...cur, orange: undefined }));
+                                throw e;
+                              }
+                            }}
+                            onLeave={async () => {
+                              if (devClientWrites) return leaveSeatDev('orange');
+                              if (!roomId) return;
+                              const current = (roomForView ?? remoteRoom)!.seats.orange;
+                              setOptimistic((cur) => ({
+                                ...cur,
+                                orange: {
+                                  occupied: false,
+                                  displayName: current.displayName ?? null,
+                                  uid: null,
+                                },
+                              }));
+                              try {
+                                await apiLeaveSeat(roomId, 'orange');
+                              } catch (e) {
+                                setOptimistic((cur) => ({ ...cur, orange: undefined }));
+                                throw e;
+                              }
+                            }}
+                            onChangeName={(name) => {
+                              if (devClientWrites) return setDisplayNameDev('orange', name);
+                            }}
+                            canLeave={canLeaveOrange}
+                            leaveDisabledReason={leaveReason}
+                            disableClaim={remoteRoom.seats.purple.uid === uid}
+                            disableClaimReason="同一ユーザーは両席に着席できません"
+                          />
                         </>
                       );
                     })()}
@@ -295,18 +314,27 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {(['purple', 'orange'] as const).map((team) => (
                       <div key={team} className="panel space-y-2">
-                        <div className={`rounded-md bg-gradient-to-r ${team === 'purple' ? 'from-fuchsia-500 to-purple-600' : 'from-amber-400 to-orange-500'} px-3 py-2 text-slate-900 font-bold text-center`}>
+                        <div
+                          className={`rounded-md bg-gradient-to-r ${team === 'purple' ? 'from-fuchsia-500 to-purple-600' : 'from-amber-400 to-orange-500'} px-3 py-2 text-slate-900 font-bold text-center`}
+                        >
                           {team === 'purple' ? 'パープル' : 'オレンジ'} 席
                         </div>
-                        <div className="text-sm text-slate-200">表示名: {(roomForView ?? remoteRoom)!.seats[team].displayName ?? '—'}</div>
-                        <div className="text-xs text-slate-400">状態: {(roomForView ?? remoteRoom)!.seats[team].occupied ? '着席中' : '空席'}</div>
+                        <div className="text-sm text-slate-200">
+                          表示名: {(roomForView ?? remoteRoom)!.seats[team].displayName ?? '—'}
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          状態:{' '}
+                          {(roomForView ?? remoteRoom)!.seats[team].occupied ? '着席中' : '空席'}
+                        </div>
                       </div>
                     ))}
                   </div>
                 )}
                 <div className="flex items-center gap-3">
                   {(() => {
-                    const bothSeated = (roomForView ?? remoteRoom)!.seats.purple.occupied && (roomForView ?? remoteRoom)!.seats.orange.occupied;
+                    const bothSeated =
+                      (roomForView ?? remoteRoom)!.seats.purple.occupied &&
+                      (roomForView ?? remoteRoom)!.seats.orange.occupied;
                     const isHost = uid && remoteRoom.hostUid && uid === remoteRoom.hostUid;
                     const canStart = Boolean(bothSeated && isHost);
                     return (
@@ -335,7 +363,9 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
             <div className="rounded-md border border-slate-700 bg-slate-800/60 p-3 text-sm">
               <div className="flex items-center gap-2">
                 <div className="font-mono">roomId: {room.id}</div>
-                <div className="ml-auto text-xs text-slate-400">作成時刻: {new Date(room.createdAt).toLocaleString()}</div>
+                <div className="ml-auto text-xs text-slate-400">
+                  作成時刻: {new Date(room.createdAt).toLocaleString()}
+                </div>
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <div className="truncate text-xs">部屋URL: {buildRoomUrl(room)}</div>
@@ -374,7 +404,9 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
               >
                 ドラフト開始
               </button>
-              {!canStart && <div className="text-sm text-slate-300">両席が着席で開始できます。</div>}
+              {!canStart && (
+                <div className="text-sm text-slate-300">両席が着席で開始できます。</div>
+              )}
             </div>
           </>
         )}

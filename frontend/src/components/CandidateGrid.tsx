@@ -40,7 +40,7 @@ const CandidateGrid: React.FC<Props> = ({
 
   const selectedPokemon = React.useMemo<Pokemon | null>(
     () => pokemons.find((p) => p.id === selectedId) ?? null,
-    [pokemons, selectedId]
+    [pokemons, selectedId],
   );
 
   // 無効化されたIDが選択中だった場合は解除
@@ -98,7 +98,7 @@ const CandidateGrid: React.FC<Props> = ({
           title={!canConfirm ? 'ドラフト開始後に有効になります' : undefined}
           className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow enabled:hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          選択を決定
+          決定
         </button>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {types.map((t) => (
@@ -135,7 +135,12 @@ const CandidateGrid: React.FC<Props> = ({
                     // トグル解除
                     if (prev.includes(p.id)) {
                       const next = prev.filter((id) => id !== p.id);
-                      if (onSelect) onSelect(next.length ? pokemons.find((x) => x.id === next[next.length - 1]) ?? null : null);
+                      if (onSelect)
+                        onSelect(
+                          next.length
+                            ? (pokemons.find((x) => x.id === next[next.length - 1]) ?? null)
+                            : null,
+                        );
                       return next;
                     }
                     // まだ2未満なら追加
@@ -163,8 +168,8 @@ const CandidateGrid: React.FC<Props> = ({
                 (isDisabled
                   ? 'border-slate-700 bg-slate-800/40 opacity-40 grayscale cursor-not-allowed'
                   : isSelected
-                  ? 'border-indigo-400 bg-indigo-500/10 ring-indigo-400'
-                  : 'border-slate-700 bg-slate-800/60 hover:bg-slate-700/60')
+                    ? 'border-indigo-400 bg-indigo-500/10 ring-indigo-400'
+                    : 'border-slate-700 bg-slate-800/60 hover:bg-slate-700/60')
               }
               disabled={isDisabled}
               aria-pressed={isSelected}

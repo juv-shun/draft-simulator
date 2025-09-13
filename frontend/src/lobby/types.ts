@@ -12,4 +12,5 @@ export type RoomMock = {
   state: 'lobby' | 'starting';
   config: { turnSeconds: number };
   createdAt: number;
+  hostUid?: string | null;
 };

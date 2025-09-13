@@ -10,9 +10,11 @@ type Props = {
   onChangeName: (name: string) => void;
   disableClaim?: boolean;
   disableClaimReason?: string;
+  canLeave?: boolean;
+  leaveDisabledReason?: string;
 };
 
-const LobbySeatCard: React.FC<Props> = ({ team, seat, onClaim, onLeave, onChangeName, disableClaim, disableClaimReason }) => {
+const LobbySeatCard: React.FC<Props> = ({ team, seat, onClaim, onLeave, onChangeName, disableClaim, disableClaimReason, canLeave = true, leaveDisabledReason }) => {
   const color = team === 'purple' ? 'from-fuchsia-500 to-purple-600' : 'from-amber-400 to-orange-500';
   const title = team === 'purple' ? 'パープル' : 'オレンジ';
   const [value, setValue] = React.useState<string>(seat.displayName ?? '');
@@ -21,10 +23,13 @@ const LobbySeatCard: React.FC<Props> = ({ team, seat, onClaim, onLeave, onChange
   // 外部からの表示名更新を取り込む（編集中は上書きしない）
   React.useEffect(() => {
     const external = seat.displayName ?? '';
+    // 外部更新のみ取り込む。IME確定（compositionend）直後に上書きしないため、
+    // composing の変化では発火させない。
     if (!composing && external !== value) {
       setValue(external);
     }
-  }, [seat.displayName, composing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seat.displayName]);
 
   const handleChange = (next: string): void => {
     setValue(next);
@@ -62,7 +67,7 @@ const LobbySeatCard: React.FC<Props> = ({ team, seat, onClaim, onLeave, onChange
         {!seat.occupied ? (
           <button
             type="button"
-            onClick={() => onClaim(seat.displayName?.trim() || undefined)}
+            onClick={() => onClaim(value.trim() || undefined)}
             disabled={!value || value.trim().length === 0 || Boolean(disableClaim)}
             className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow enabled:hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed"
             title={
@@ -80,7 +85,9 @@ const LobbySeatCard: React.FC<Props> = ({ team, seat, onClaim, onLeave, onChange
             <button
               type="button"
               onClick={onLeave}
-              className="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-400"
+              disabled={!canLeave}
+              className="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white shadow enabled:hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-400 disabled:opacity-40 disabled:cursor-not-allowed"
+              title={!canLeave ? leaveDisabledReason ?? 'この席を離席させる権限がありません' : undefined}
             >
               離席
             </button>

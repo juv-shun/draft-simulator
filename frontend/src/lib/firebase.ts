@@ -1,6 +1,7 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, type Auth } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator, type Firestore } from 'firebase/firestore';
+import { getFunctions, connectFunctionsEmulator, type Functions } from 'firebase/functions';
 
 // Vite の環境変数
 const {
@@ -16,6 +17,7 @@ const isDev = import.meta.env.DEV === true;
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
+let functionsIns: Functions | null = null;
 
 export function getFirebaseApp(): FirebaseApp {
   if (app) return app;
@@ -56,10 +58,24 @@ export function getFirestoreDb(): Firestore {
   db = getFirestore(appIns);
   if (VITE_USE_EMULATORS === 'true') {
     try {
-      connectFirestoreEmulator(db, '127.0.0.1', 8080);
+      connectFirestoreEmulator(db, 'localhost', 8080);
     } catch {
       // noop
     }
   }
   return db;
+}
+
+export function getFunctionsClient(): Functions {
+  if (functionsIns) return functionsIns;
+  const appIns = getFirebaseApp();
+  functionsIns = getFunctions(appIns, (import.meta.env.VITE_FUNCTIONS_REGION as string) || 'us-central1');
+  if (VITE_USE_EMULATORS === 'true') {
+    try {
+      connectFunctionsEmulator(functionsIns, 'localhost', 5001);
+    } catch {
+      // noop
+    }
+  }
+  return functionsIns;
 }

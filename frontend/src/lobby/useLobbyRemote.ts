@@ -46,6 +46,7 @@ function mapRoom(docId: string, data: DocumentData): RoomMock | null {
     state,
     config: { turnSeconds },
     createdAt,
+    hostUid: (data?.hostUid ?? null) as string | null,
   };
   return room;
 }

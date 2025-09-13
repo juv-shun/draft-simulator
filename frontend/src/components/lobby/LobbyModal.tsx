@@ -1,6 +1,8 @@
 import { apiClaimSeat, apiCreateRoom, apiLeaveSeat, apiStartDraft } from '@/api/firebaseFunctions';
 import { useAnonAuth } from '@/auth/useAnonAuth';
 import CopyToClipboardButton from '@/components/common/CopyToClipboardButton';
+import StartButton from '@/components/lobby/StartButton';
+import { buildRoomUrl } from '@/lib/roomUrl';
 import type { RoomMock, SeatMock } from '@/lobby/types';
 import { useLobbyMock } from '@/lobby/useLobbyMock';
 import { useLobbyRemote } from '@/lobby/useLobbyRemote';
@@ -22,12 +24,7 @@ const Overlay: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </div>
 );
 
-function buildRoomUrl(room: RoomMock): string {
-  const base =
-    typeof window !== 'undefined' ? window.location.origin + window.location.pathname : '';
-  const query = `?mode=2p&roomId=${encodeURIComponent(room.id)}`;
-  return `${base}${query}`;
-}
+// URL組立は util に移動
 
 function getRoomIdFromLocation(): string | null {
   if (typeof window === 'undefined') return null;
@@ -143,29 +140,23 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                     }}
                   />
                 )}
-                <div className="flex items-center justify-center gap-3">
-                  {(() => {
-                    const bothSeated =
-                      (roomForView ?? remoteRoom)!.seats.purple.occupied &&
-                      (roomForView ?? remoteRoom)!.seats.orange.occupied;
-                    const isHost = uid && remoteRoom.hostUid && uid === remoteRoom.hostUid;
-                    const canStart = Boolean(bothSeated && isHost);
-                    return (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!roomId) return;
-                          await apiStartDraft(roomId);
-                        }}
-                        disabled={!canStart}
-                        className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow enabled:hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
-                        title={!canStart ? 'ホストかつ両席着席で開始できます' : undefined}
-                      >
-                        ドラフト開始
-                      </button>
-                    );
-                  })()}
-                </div>
+                {(() => {
+                  const bothSeated =
+                    (roomForView ?? remoteRoom)!.seats.purple.occupied &&
+                    (roomForView ?? remoteRoom)!.seats.orange.occupied;
+                  const isHost = uid && remoteRoom.hostUid && uid === remoteRoom.hostUid;
+                  const canStart = Boolean(bothSeated && isHost);
+                  return (
+                    <StartButton
+                      disabled={!canStart}
+                      titleWhenDisabled={'ホストかつ両席着席で開始できます'}
+                      onClick={async () => {
+                        if (!roomId) return;
+                        await apiStartDraft(roomId);
+                      }}
+                    />
+                  );
+                })()}
               </>
             )}
           </>

@@ -7,6 +7,7 @@ import type { RoomMock, SeatMock } from '@/lobby/types';
 import { useLobbyMock } from '@/lobby/useLobbyMock';
 import { useLobbyRemote } from '@/lobby/useLobbyRemote';
 import SeatsGrid from '@/components/lobby/SeatsGrid';
+import SpectatorSeats from '@/components/lobby/SpectatorSeats';
 import useAutoRoomCreation from '@/lobby/useAutoRoomCreation';
 import useOptimisticSeats from '@/lobby/useOptimisticSeats';
 import React from 'react';
@@ -149,6 +150,7 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                     }}
                   />
                 )}
+                <SpectatorSeats />
                 {(() => {
                   // 開始条件は必ずサーバ実体(remoteRoom)に基づいて判定（楽観状態は使わない）
                   const bothSeatedRemote = Boolean(
@@ -212,6 +214,8 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                 disableClaimReason="同一ユーザーは両席に着席できません"
               />
             </div>
+
+            <SpectatorSeats />
 
             <div className="flex items-center gap-3">
               <button

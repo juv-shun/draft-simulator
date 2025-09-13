@@ -43,11 +43,5 @@ sequenceDiagram
     DB-->>HostClient: 変更通知（橙:着席）
     DB-->>OrangeClient: 変更通知（橙:着席）
 
-    Note over HostClient: 両席が着席したら開始可能
-    Host->>HostClient: 「ドラフト開始」をクリック
-    HostClient->>Func: startDraft(roomId)
-    Func->>DB: state = { phase: BAN1, turnTeam: PURPLE, turnIndex: 1,<br />                          deadline: now+15s, lastAction: null }
-    Func->>Tasks: schedule onTurnTimeout(roomId, turnIndex=1, ETA=15s)
-    DB-->>HostClient: スナップショット（開始・BAN1・紫ターン・deadline）
-    DB-->>OrangeClient: スナップショット（開始・BAN1・紫ターン・deadline）
+    Note over HostClient: 両席が着席したら開始可能（以降の開始〜BAN1は sequence_02 へ）
 ```

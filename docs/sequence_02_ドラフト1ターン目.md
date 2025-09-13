@@ -8,10 +8,14 @@ sequenceDiagram
     participant DB as Firestore（rooms/{roomId}）
     participant Tasks as Cloud Tasks（ターン期限ジョブ）
 
-    Note over DB: state={ phase:BAN1, turnTeam:PURPLE, turnIndex:1, deadline:now+15s }
+    Note over PurpleClient,OrangeClient: 両席が着席したらホスト（ここでは紫代表）だけが開始可能
+    Purple->>PurpleClient: 「ドラフト開始」をクリック
+    PurpleClient->>Func: startDraft(roomId)
+    Func->>DB: state = { phase: BAN1, turnTeam: PURPLE, turnIndex: 1,<br />                          deadline: now+15s, lastAction: null }
+    Func->>Tasks: schedule onTurnTimeout(roomId, turnIndex=1, ETA=15s)
     Note over PurpleClient,OrangeClient: onSnapshotでrooms/{roomId}を購読。<br />残り時間はdeadlineからクライアント計算
-    DB-->>PurpleClient: スナップショット（開始状態）
-    DB-->>OrangeClient: スナップショット（開始状態）
+    DB-->>PurpleClient: スナップショット（開始・BAN1・紫ターン・deadline）
+    DB-->>OrangeClient: スナップショット（開始・BAN1・紫ターン・deadline）
 
     %% 1ターン目：紫のBAN1（時間切れ分岐あり）
     Note over PurpleClient: 1ターン目（紫のBAN1）

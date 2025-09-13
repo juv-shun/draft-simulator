@@ -1,10 +1,10 @@
-import React from 'react';
-import type { Pokemon } from '@/types';
-import pokemonsData from '@/data/pokemons.json';
-import useDraftControllerLocal from './draft/useDraftControllerLocal';
-import useDraftControllerRemote from './draft/useDraftControllerRemote';
 import ModeSelectModal from '@/components/ModeSelectModal';
 import LobbyModal from '@/components/lobby/LobbyModal';
+import pokemonsData from '@/data/pokemons.json';
+import type { Pokemon } from '@/types';
+import React from 'react';
+import useDraftControllerLocal from './draft/useDraftControllerLocal';
+import useDraftControllerRemote from './draft/useDraftControllerRemote';
 
 const TeamPanel = React.lazy(() => import('./components/TeamPanel'));
 const CandidateGrid = React.lazy(() => import('./components/CandidateGrid'));
@@ -36,7 +36,7 @@ const App: React.FC = () => {
     <div className="min-h-screen">
       <header className="border-b border-slate-800 bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/50">
         <div className="mx-auto max-w-7xl px-4 py-4">
-          <h1 className="text-xl font-bold">ポケモンユナイト 3BAN ドラフトピッカー(α)</h1>
+          <h1 className="text-xl font-bold">ポケモンユナイト 3BAN ドラフトピッカー(β)</h1>
         </div>
       </header>
 
@@ -56,7 +56,9 @@ const App: React.FC = () => {
               <>
                 <div className="text-sm text-slate-300">モード選択待ち</div>
                 {mode && (
-                  <span className="text-xs rounded bg-slate-700 px-2 py-1 text-slate-200">現在: {mode === '1p' ? '1人' : '2人'}</span>
+                  <span className="text-xs rounded bg-slate-700 px-2 py-1 text-slate-200">
+                    現在: {mode === '1p' ? '1人' : '2人'}
+                  </span>
                 )}
               </>
             ) : (
@@ -64,7 +66,9 @@ const App: React.FC = () => {
                 <div className="text-sm text-slate-300">現在のフェーズ</div>
                 <div className="text-2xl font-bold">{ctrl.phaseLabel}</div>
                 <div className="text-sm text-slate-300">制限時間</div>
-                <div className="text-3xl font-extrabold tabular-nums">{ctrl.state.secondsLeft}s</div>
+                <div className="text-3xl font-extrabold tabular-nums">
+                  {ctrl.state.secondsLeft}s
+                </div>
               </>
             )}
           </div>

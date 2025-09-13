@@ -337,6 +337,7 @@ export function useAutoSubmitOnTimeout(params: {
   allPokemons: Pokemon[];
 }): void {
   const lastSubmittedTurnRef = React.useRef<number | null>(null);
+  const lastAttemptedTurnRef = React.useRef<number | null>(null);
   const prevSecondsRef = React.useRef<number>(-1);
   React.useEffect(() => {
     const {
@@ -359,7 +360,8 @@ export function useAutoSubmitOnTimeout(params: {
     if (!canConfirm) return;
     const ti = serverState.turnIndex ?? 0;
     if (!ti) return;
-    if (lastSubmittedTurnRef.current === ti) return; // 二重送信防止
+    if (lastSubmittedTurnRef.current === ti) return; // 成功済み
+    if (lastAttemptedTurnRef.current === ti) return; // 失敗でも再連打しない（サーバ側フォールバックに委ねる）
     // 念のため deadline 実時刻も確認（誤検知防止の最小ガード）
     const dl = serverState.deadline ?? 0;
     if (dl && Date.now() < dl) return;
@@ -400,6 +402,7 @@ export function useAutoSubmitOnTimeout(params: {
     }
 
     // 非同期で送信（自動送信のため UI アラートは出さない）
+    lastAttemptedTurnRef.current = ti;
     (async () => {
       try {
         await apiApplyAction(roomId, { kind: isBan ? 'ban' : 'pick', ids });

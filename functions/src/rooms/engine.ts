@@ -131,9 +131,10 @@ export function applyActionToState(
   const nxt = expectedTurn({ ...next });
   if (!nxt) {
     next.phase = 'finished';
-    next.turnTeam = undefined;
-    next.turnIndex = undefined;
-    next.deadline = undefined;
+    // Firestore は undefined をフィールド値として受け付けないため、キー自体を削除する
+    delete (next as any).turnTeam;
+    delete (next as any).turnIndex;
+    delete (next as any).deadline;
     return { nextState: next };
   }
 
@@ -146,4 +147,3 @@ export function applyActionToState(
 
   return { nextState: next, nextTurn: nxt };
 }
-

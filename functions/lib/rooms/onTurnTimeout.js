@@ -1,12 +1,8 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db, serverTimestamp } from '../lib/firestore.js';
 import { applyActionToState, expectedTurn, usedIds } from './engine.js';
-// サーバ側タイムアウト処理（Cloud Tasks からの呼び出し想定）
-export const onTurnTimeout = onCall({ cors: true, region: 'us-central1' }, async (req) => {
-    const { roomId, turnIndex } = (req.data || {});
-    if (!roomId || typeof turnIndex !== 'number') {
-        throw new HttpsError('invalid-argument', 'INVALID_ARGUMENT');
-    }
+import { scheduleTurnTimeout } from './tasks.js';
+export async function processTurnTimeout(roomId, turnIndex) {
     let nextDeadline = 0;
     let nextTurnIndex = 0;
     const ref = db.collection('rooms').doc(roomId);
@@ -17,37 +13,33 @@ export const onTurnTimeout = onCall({ cors: true, region: 'us-central1' }, async
         const data = snap.data();
         const state = data?.state;
         if (!state || state.phase === 'lobby')
-            return; // まだ開始していない
+            return; // 未開始
         if (state.phase === 'finished' || state.phase === 'aborted')
-            return; // 終了済み
-        // 既に別ターンに進んでいる/ズレている場合は冪等に no-op
+            return; // 終了
+        // ターン不一致や期限未到来は no-op
         if (typeof state.turnIndex !== 'number' || state.turnIndex !== turnIndex)
             return;
         const now = Date.now();
-        // 期限未到来なら実行しない（安全側）
         if (typeof state.deadline === 'number' && state.deadline > now)
             return;
         const exp = expectedTurn(state);
-        if (!exp) {
-            // もう終わっている
+        if (!exp)
             return;
-        }
         const team = exp.team;
         const count = exp.count;
-        // 使用済みを除いた候補からランダム選出
+        // 使用済みを除いた候補からランダム
         const pool = getAllowedPool(state);
         const used = usedIds(state);
         const candidates = pool.filter((id) => !used.has(id));
         if (candidates.length === 0)
-            return; // 候補が無ければ何もしない
+            return;
         const pick = [];
-        // シンプルなランダム選出（重複なし）
         while (pick.length < count && candidates.length > 0) {
             const i = Math.floor(Math.random() * candidates.length);
             pick.push(candidates.splice(i, 1)[0]);
         }
         if (pick.length !== count)
-            return; // 足りなければ無理に進めない
+            return;
         const seconds = Number(data?.config?.turnSeconds ?? 15);
         const result = applyActionToState(state, team, exp.kind, pick, seconds, now);
         const nextState = result.nextState;
@@ -55,7 +47,25 @@ export const onTurnTimeout = onCall({ cors: true, region: 'us-central1' }, async
         nextTurnIndex = nextState.turnIndex ?? 0;
         tx.update(ref, { state: nextState, updatedAt: serverTimestamp() });
     });
-    return { ok: true, deadline: nextDeadline, turnIndex: nextTurnIndex };
+    return { deadline: nextDeadline, turnIndex: nextTurnIndex };
+}
+// サーバ側タイムアウト処理（Cloud Tasks からの呼び出し想定）
+export const onTurnTimeout = onCall({ cors: true, region: 'us-central1' }, async (req) => {
+    const { roomId, turnIndex } = (req.data || {});
+    if (!roomId || typeof turnIndex !== 'number') {
+        throw new HttpsError('invalid-argument', 'INVALID_ARGUMENT');
+    }
+    const res = await processTurnTimeout(roomId, turnIndex);
+    if (res.deadline > 0 && res.turnIndex > 0) {
+        try {
+            const eta = Math.max(0, res.deadline - Date.now());
+            await scheduleTurnTimeout(roomId, res.turnIndex, eta);
+        }
+        catch (e) {
+            console.error('Failed to schedule timeout task (onTurnTimeout):', e);
+        }
+    }
+    return { ok: true, deadline: res.deadline, turnIndex: res.turnIndex };
 });
 // 暫定の許可プール（最小セット）。後続で pokemons.json を統合予定。
 const ALLOW_LIST_MIN = [

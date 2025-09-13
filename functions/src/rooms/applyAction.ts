@@ -2,6 +2,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db, serverTimestamp } from '../lib/firestore.js';
 import type { Team } from '../types.js';
 import { applyActionToState } from './engine.js';
+import { scheduleTurnTimeout } from './tasks.js';
 
 type ApplyPayload = { roomId?: string; action?: { kind?: 'ban' | 'pick'; ids?: string[] } };
 
@@ -58,6 +59,16 @@ export const applyAction = onCall({ cors: true, region: 'us-central1' }, async (
       throw new HttpsError(code, e?.message || 'INVALID_ACTION');
     }
   });
+
+  // 次ターンが存在する場合はタイムアウトを再予約（スタブ）
+  if (nextDeadline > 0 && nextTurnIndex > 0) {
+    try {
+      const eta = Math.max(0, nextDeadline - Date.now());
+      await scheduleTurnTimeout(roomId, nextTurnIndex, eta);
+    } catch (e) {
+      console.error('Failed to schedule timeout task (applyAction):', e);
+    }
+  }
 
   return { ok: true as const, deadline: nextDeadline, turnIndex: nextTurnIndex } as {
     ok: true;

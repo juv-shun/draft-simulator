@@ -251,8 +251,20 @@ export function useDraftControllerRemote(allPokemons: Pokemon[]): DraftControlle
     async (pokemon?: Pokemon) => {
       if (!roomId || !serverState || !pokemon) return;
       const isBan = serverState.phase === 'ban1' || serverState.phase === 'ban2';
-      await apiApplyAction(roomId, { kind: isBan ? 'ban' : 'pick', ids: [pokemon.id] });
-      setPendingSelection(null);
+      try {
+        await apiApplyAction(roomId, { kind: isBan ? 'ban' : 'pick', ids: [pokemon.id] });
+        setPendingSelection(null);
+      } catch (e) {
+        // 簡易トースト（アラート）でエラー表示
+        try {
+          const { messageFromFirebaseError } = await import('@/api/errors');
+          // eslint-disable-next-line no-alert
+          alert(messageFromFirebaseError(e));
+        } catch {
+          // eslint-disable-next-line no-alert
+          alert('操作に失敗しました');
+        }
+      }
     },
     [roomId, serverState],
   );
@@ -261,8 +273,19 @@ export function useDraftControllerRemote(allPokemons: Pokemon[]): DraftControlle
     async (pair: Pokemon[]) => {
       if (!roomId || !serverState) return;
       if (pair.length !== 2) return;
-      await apiApplyAction(roomId, { kind: 'pick', ids: [pair[0].id, pair[1].id] });
-      setPendingMulti([]);
+      try {
+        await apiApplyAction(roomId, { kind: 'pick', ids: [pair[0].id, pair[1].id] });
+        setPendingMulti([]);
+      } catch (e) {
+        try {
+          const { messageFromFirebaseError } = await import('@/api/errors');
+          // eslint-disable-next-line no-alert
+          alert(messageFromFirebaseError(e));
+        } catch {
+          // eslint-disable-next-line no-alert
+          alert('操作に失敗しました');
+        }
+      }
     },
     [roomId, serverState],
   );

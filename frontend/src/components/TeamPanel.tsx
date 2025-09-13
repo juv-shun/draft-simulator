@@ -1,20 +1,21 @@
 import React from 'react';
 import type { Pokemon } from '@/types';
+import { teamGradientClass, teamRingClass, teamTitle } from '@/lib/labels';
 
 type Highlight = { type: 'ban' | 'pick'; index: number };
 type HighlightInput = Highlight | Highlight[] | null | undefined;
 
 type Props = {
   team: 'purple' | 'orange';
-  title: string;
   activeHighlight?: HighlightInput;
   bans?: (Pokemon | null)[];
   picks?: (Pokemon | null)[];
 };
 
-const TeamPanel: React.FC<Props> = ({ team, title, activeHighlight, bans = [], picks = [] }) => {
-  const color = team === 'purple' ? 'from-fuchsia-500 to-purple-600' : 'from-amber-400 to-orange-500';
-  const ringClass = team === 'purple' ? 'ring-fuchsia-300' : 'ring-amber-300';
+const TeamPanel: React.FC<Props> = ({ team, activeHighlight, bans = [], picks = [] }) => {
+  const color = teamGradientClass(team);
+  const ringClass = teamRingClass(team);
+  const title = `${teamTitle(team)}チーム`;
   const isActive = (type: Highlight['type'], index: number): boolean => {
     if (!activeHighlight) return false;
     const list: Highlight[] = Array.isArray(activeHighlight) ? activeHighlight : [activeHighlight];

@@ -1,17 +1,8 @@
 import React from 'react';
-import {
-  doc,
-  onSnapshot,
-  type DocumentData,
-  collection,
-  addDoc,
-  updateDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
+import { doc, onSnapshot, type DocumentData } from 'firebase/firestore';
 import type { Team } from '@/types';
 import type { RoomMock, SeatMock } from '@/lobby/types';
 import { getFirestoreDb } from '@/lib/firebase';
-import { getFirebaseAuth } from '@/lib/firebase';
 
 function toSeatMock(raw: any): SeatMock {
   const uid = (raw?.uid ?? null) as string | null;
@@ -55,7 +46,6 @@ export function useLobbyRemote(roomId: string | null) {
   const [room, setRoom] = React.useState<RoomMock | null>(null);
   const [loading, setLoading] = React.useState<boolean>(Boolean(roomId));
   const [error, setError] = React.useState<string | null>(null);
-  const devWritesEnabled = (import.meta.env.VITE_DEV_CLIENT_WRITES as string) === 'true';
 
   React.useEffect(() => {
     if (!roomId) {
@@ -88,70 +78,7 @@ export function useLobbyRemote(roomId: string | null) {
     return () => unsub();
   }, [roomId]);
 
-  // 開発用: クライアント直書きで部屋作成/着席を可能にする（Emulator前提）
-  const createRoomDev = React.useCallback(
-    async (turnSeconds: number = 15): Promise<string> => {
-      if (!devWritesEnabled) throw new Error('開発用クライアント書き込みが無効です');
-      const db = getFirestoreDb();
-      const auth = getFirebaseAuth();
-      const uid = auth.currentUser?.uid;
-      if (!uid) throw new Error('認証が未完了です');
-      const ref = await addDoc(collection(db, 'rooms'), {
-        hostUid: uid,
-        seats: { PURPLE: {}, ORANGE: {} },
-        state: 'lobby',
-        config: { turnSeconds },
-        createdAt: serverTimestamp(),
-      });
-      return ref.id;
-    },
-    [devWritesEnabled]
-  );
-
-  const claimSeatDev = React.useCallback(
-    async (team: Team, displayName: string) => {
-      if (!devWritesEnabled) throw new Error('開発用クライアント書き込みが無効です');
-      if (!roomId) throw new Error('roomId がありません');
-      const db = getFirestoreDb();
-      const auth = getFirebaseAuth();
-      const uid = auth.currentUser?.uid;
-      if (!uid) throw new Error('認証が未完了です');
-      const key = team === 'purple' ? 'PURPLE' : 'ORANGE';
-      await updateDoc(doc(db, 'rooms', roomId), {
-        [`seats.${key}.uid`]: uid,
-        [`seats.${key}.displayName`]: displayName,
-      });
-    },
-    [devWritesEnabled, roomId]
-  );
-
-  const leaveSeatDev = React.useCallback(
-    async (team: Team) => {
-      if (!devWritesEnabled) throw new Error('開発用クライアント書き込みが無効です');
-      if (!roomId) throw new Error('roomId がありません');
-      const db = getFirestoreDb();
-      const key = team === 'purple' ? 'PURPLE' : 'ORANGE';
-      await updateDoc(doc(db, 'rooms', roomId), {
-        [`seats.${key}.uid`]: null,
-      });
-    },
-    [devWritesEnabled, roomId]
-  );
-
-  const setDisplayNameDev = React.useCallback(
-    async (team: Team, name: string) => {
-      if (!devWritesEnabled) throw new Error('開発用クライアント書き込みが無効です');
-      if (!roomId) throw new Error('roomId がありません');
-      const db = getFirestoreDb();
-      const key = team === 'purple' ? 'PURPLE' : 'ORANGE';
-      await updateDoc(doc(db, 'rooms', roomId), {
-        [`seats.${key}.displayName`]: name,
-      });
-    },
-    [devWritesEnabled, roomId]
-  );
-
-  return { room, loading, error, createRoomDev, claimSeatDev, leaveSeatDev, setDisplayNameDev, devWritesEnabled } as const;
+  return { room, loading, error } as const;
 }
 
 export default useLobbyRemote;

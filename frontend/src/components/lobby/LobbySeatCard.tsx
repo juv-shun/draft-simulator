@@ -15,6 +15,31 @@ type Props = {
 const LobbySeatCard: React.FC<Props> = ({ team, seat, onClaim, onLeave, onChangeName, disableClaim, disableClaimReason }) => {
   const color = team === 'purple' ? 'from-fuchsia-500 to-purple-600' : 'from-amber-400 to-orange-500';
   const title = team === 'purple' ? 'パープル' : 'オレンジ';
+  const [value, setValue] = React.useState<string>(seat.displayName ?? '');
+  const [composing, setComposing] = React.useState<boolean>(false);
+
+  // 外部からの表示名更新を取り込む（編集中は上書きしない）
+  React.useEffect(() => {
+    const external = seat.displayName ?? '';
+    if (!composing && external !== value) {
+      setValue(external);
+    }
+  }, [seat.displayName, composing]);
+
+  const handleChange = (next: string): void => {
+    setValue(next);
+    if (!composing) onChangeName(next);
+  };
+
+  const handleCompositionStart = (): void => setComposing(true);
+  const handleCompositionEnd = (): void => {
+    setComposing(false);
+    onChangeName(value);
+  };
+
+  const handleBlur = (): void => {
+    onChangeName(value);
+  };
   return (
     <div className="panel space-y-3">
       <div className={`rounded-md bg-gradient-to-r ${color} px-3 py-2 text-slate-900 font-bold text-center`}>
@@ -25,8 +50,11 @@ const LobbySeatCard: React.FC<Props> = ({ team, seat, onClaim, onLeave, onChange
         <input
           type="text"
           placeholder="表示名"
-          value={seat.displayName ?? ''}
-          onChange={(e) => onChangeName(e.target.value)}
+          value={value}
+          onChange={(e) => handleChange(e.target.value)}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
+          onBlur={handleBlur}
           className="w-full rounded-md border border-slate-700 bg-slate-800/60 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />
       </div>
@@ -35,12 +63,10 @@ const LobbySeatCard: React.FC<Props> = ({ team, seat, onClaim, onLeave, onChange
           <button
             type="button"
             onClick={() => onClaim(seat.displayName?.trim() || undefined)}
-            disabled={
-              !seat.displayName || seat.displayName.trim().length === 0 || Boolean(disableClaim)
-            }
+            disabled={!value || value.trim().length === 0 || Boolean(disableClaim)}
             className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow enabled:hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed"
             title={
-              !seat.displayName || seat.displayName.trim().length === 0
+              !value || value.trim().length === 0
                 ? '表示名を入力してください'
                 : disableClaim
                 ? disableClaimReason ?? 'この席には着席できません'

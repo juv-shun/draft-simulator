@@ -16,6 +16,19 @@ const App: React.FC = () => {
   const [showModeSelect, setShowModeSelect] = React.useState(true);
   const [showLobby, setShowLobby] = React.useState(false);
 
+  // 直接URLで roomId が指定された場合は 2人プレイのロビーを自動表示
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    const roomId = sp.get('roomId');
+    const modeParam = sp.get('mode');
+    if (roomId || modeParam === '2p') {
+      setMode('2p');
+      setShowModeSelect(false);
+      setShowLobby(true);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen">
       <header className="border-b border-slate-800 bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/50">

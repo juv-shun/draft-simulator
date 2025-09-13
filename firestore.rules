@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 開発（フェーズ3）: rooms は認証ユーザーに読み取り許可。書き込みは原則不可。
+    match /rooms/{roomId} {
+      allow read: if request.auth != null;
+      // 開発用（Emulator 前提）: 作成は hostUid 一致を要求
+      allow create: if request.auth != null && request.resource.data.hostUid == request.auth.uid;
+      // 開発用（Emulator 前提）: フェーズ3は座席操作の更新を許容
+      allow update: if request.auth != null;
+      allow delete: if false;
+    }
+
+    // その他は原則読み取りのみ許可（必要に応じて個別で強化）
+    match /{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}

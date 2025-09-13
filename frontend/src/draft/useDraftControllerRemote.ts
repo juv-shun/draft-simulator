@@ -307,7 +307,109 @@ export function useDraftControllerRemote(allPokemons: Pokemon[]): DraftControlle
     confirmPair,
   };
 
+  // 0秒時の自動送信（選択済み優先、未選択はランダム）
+  useAutoSubmitOnTimeout({
+    roomId,
+    serverState,
+    secondsLeft,
+    canConfirm,
+    selectionMode,
+    pendingSelection,
+    pendingMulti,
+    disabledIds,
+    allPokemons,
+  });
+
   return controller;
 }
+
+// 自動送信: 0秒になったら、選択済みを優先し未選択ならランダムでサーバへ送信
+// セキュリティは考慮しない前提（フロント主導の自動確定）
+export function useAutoSubmitOnTimeout(params: {
+  roomId: string | null;
+  serverState: ServerState | null;
+  secondsLeft: number;
+  canConfirm: boolean;
+  selectionMode: SelectionMode;
+  pendingSelection: Pokemon | null;
+  pendingMulti: Pokemon[];
+  disabledIds: string[];
+  allPokemons: Pokemon[];
+}): void {
+  const lastSubmittedTurnRef = React.useRef<number | null>(null);
+  const prevSecondsRef = React.useRef<number>(-1);
+  React.useEffect(() => {
+    const {
+      roomId,
+      serverState,
+      secondsLeft,
+      canConfirm,
+      selectionMode,
+      pendingSelection,
+      pendingMulti,
+      disabledIds,
+      allPokemons,
+    } = params;
+    const prev = prevSecondsRef.current;
+    prevSecondsRef.current = secondsLeft;
+    if (!roomId || !serverState) return;
+    // 0へのエッジでのみ作動
+    if (!(prev > 0 && secondsLeft === 0)) return;
+    // 自分のターンのみ
+    if (!canConfirm) return;
+    const ti = serverState.turnIndex ?? 0;
+    if (!ti) return;
+    if (lastSubmittedTurnRef.current === ti) return; // 二重送信防止
+    // 念のため deadline 実時刻も確認（誤検知防止の最小ガード）
+    const dl = serverState.deadline ?? 0;
+    if (dl && Date.now() < dl) return;
+
+    const isBan = serverState.phase === 'ban1' || serverState.phase === 'ban2';
+    const used = new Set(disabledIds);
+    const ids: string[] = [];
+
+    if (selectionMode === 'multi2') {
+      const seen = new Set<string>();
+      // 選択済みを優先
+      for (const p of pendingMulti) {
+        if (p && !used.has(p.id) && !seen.has(p.id)) {
+          ids.push(p.id);
+          seen.add(p.id);
+          if (ids.length === 2) break;
+        }
+      }
+      // 不足分をランダム補充
+      const candidates = allPokemons.filter((p) => !used.has(p.id) && !seen.has(p.id));
+      while (ids.length < 2 && candidates.length > 0) {
+        const i = Math.floor(Math.random() * candidates.length);
+        const choice = candidates.splice(i, 1)[0];
+        ids.push(choice.id);
+        seen.add(choice.id);
+      }
+      if (ids.length !== 2) return; // 候補不足。自動送信はせずサーバ側の処理に委ねる
+    } else {
+      // single
+      if (pendingSelection && !used.has(pendingSelection.id)) {
+        ids.push(pendingSelection.id);
+      } else {
+        const candidates = allPokemons.filter((p) => !used.has(p.id));
+        if (candidates.length === 0) return;
+        const choice = candidates[Math.floor(Math.random() * candidates.length)];
+        ids.push(choice.id);
+      }
+    }
+
+    // 非同期で送信（自動送信のため UI アラートは出さない）
+    (async () => {
+      try {
+        await apiApplyAction(roomId, { kind: isBan ? 'ban' : 'pick', ids });
+        lastSubmittedTurnRef.current = ti;
+      } catch (e) {
+        console.warn('auto submit failed', e);
+      }
+    })();
+  }, [params.roomId, params.serverState?.turnIndex, params.secondsLeft, params.canConfirm, params.selectionMode, params.pendingSelection, params.pendingMulti, params.disabledIds, params.allPokemons]);
+}
+
 
 export default useDraftControllerRemote;

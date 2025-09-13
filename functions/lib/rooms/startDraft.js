@@ -44,7 +44,7 @@ export const startDraft = onCall({
             updatedAt: serverTimestamp(),
         });
     });
-    // Cloud Tasks 予約（スタブ）。本番では ETA=deadline-now で予約する。
+    // 初回ターンのタイムアウトを予約（猶予は schedule 側で付与）
     try {
         await scheduleTurnTimeout(roomId, turnIndex, deadline - now);
     }

@@ -60,7 +60,7 @@ export const applyAction = onCall({ cors: true, region: 'us-central1' }, async (
     }
   });
 
-  // 次ターンが存在する場合はタイムアウトを再予約（スタブ）
+  // 次ターンが存在する場合はタイムアウトを再予約（猶予は schedule 側で加算）
   if (nextDeadline > 0 && nextTurnIndex > 0) {
     try {
       const eta = Math.max(0, nextDeadline - Date.now());

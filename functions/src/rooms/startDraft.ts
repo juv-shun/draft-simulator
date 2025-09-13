@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db, serverTimestamp } from '../lib/firestore.js';
-import { scheduleTurnTimeout } from './tasks.js';
 import type { Team } from '../types.js';
+import { scheduleTurnTimeout } from './tasks.js';
 
 
 export const startDraft = onCall({
@@ -44,7 +44,7 @@ export const startDraft = onCall({
     });
   });
 
-  // Cloud Tasks 予約（スタブ）。本番では ETA=deadline-now で予約する。
+  // 初回ターンのタイムアウトを予約（猶予は schedule 側で付与）
   try {
     await scheduleTurnTimeout(roomId, turnIndex, deadline - now);
   } catch (e) {

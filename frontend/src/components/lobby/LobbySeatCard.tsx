@@ -1,4 +1,5 @@
 import type { SeatMock } from '@/lobby/types';
+import { teamGradientClass, teamTitle } from '@/lib/labels';
 import type { Team } from '@/types';
 import React from 'react';
 import { useImeText } from '@/hooks/useImeText';
@@ -26,9 +27,8 @@ const LobbySeatCard: React.FC<Props> = ({
   canLeave = true,
   leaveDisabledReason,
 }) => {
-  const color =
-    team === 'purple' ? 'from-fuchsia-500 to-purple-600' : 'from-amber-400 to-orange-500';
-  const title = team === 'purple' ? '先攻' : '後攻';
+  const color = teamGradientClass(team);
+  const title = teamTitle(team);
   const { value, setValue, composing, onChange, onCompositionStart, onCompositionEnd } = useImeText(
     seat.displayName ?? ''
   );

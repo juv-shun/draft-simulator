@@ -10,6 +10,7 @@ import SeatsGrid from '@/components/lobby/SeatsGrid';
 import useAutoRoomCreation from '@/lobby/useAutoRoomCreation';
 import useOptimisticSeats from '@/lobby/useOptimisticSeats';
 import React from 'react';
+import { messageFromFirebaseError } from '@/api/errors';
 import LobbySeatCard from './LobbySeatCard';
 
 type Props = {
@@ -49,6 +50,7 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
     loading: roomLoading,
     error: roomError,
   } = useLobbyRemote(remoteMode ? roomId : null);
+  const [actionError, setActionError] = React.useState<string | null>(null);
 
   // 楽観的座席状態（購読結果に即時反映）
   const { roomForView, setOptimistic } = useOptimisticSeats(remoteRoom, uid);
@@ -92,6 +94,11 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
               <div className="text-sm text-slate-300">ロビーが見つかりません。</div>
             ) : (
               <>
+                {actionError && (
+                  <div className="rounded-md border border-rose-700 bg-rose-900/40 px-3 py-2 text-sm text-rose-100">
+                    {actionError}
+                  </div>
+                )}
                 <div className="rounded-md border border-slate-700 bg-slate-800/60 p-3 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="font-mono">roomId: {remoteRoom.id}</div>
@@ -118,10 +125,11 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                         }));
                       }
                       try {
+                        setActionError(null);
                         await apiClaimSeat(roomId, team, name);
                       } catch (e) {
                         setOptimistic((cur) => ({ ...cur, [team]: undefined }));
-                        throw e;
+                        setActionError(messageFromFirebaseError(e));
                       }
                     }}
                     onLeave={async (team) => {
@@ -132,10 +140,11 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                         [team]: { occupied: false, displayName: current.displayName ?? null, uid: null } as SeatMock,
                       }));
                       try {
+                        setActionError(null);
                         await apiLeaveSeat(roomId, team);
                       } catch (e) {
                         setOptimistic((cur) => ({ ...cur, [team]: undefined }));
-                        throw e;
+                        setActionError(messageFromFirebaseError(e));
                       }
                     }}
                   />
@@ -152,7 +161,12 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                       titleWhenDisabled={'ホストかつ両席着席で開始できます'}
                       onClick={async () => {
                         if (!roomId) return;
-                        await apiStartDraft(roomId);
+                        try {
+                          setActionError(null);
+                          await apiStartDraft(roomId);
+                        } catch (e) {
+                          setActionError(messageFromFirebaseError(e));
+                        }
                       }}
                     />
                   );

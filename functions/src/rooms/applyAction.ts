@@ -6,7 +6,7 @@ import { scheduleTurnTimeout } from './tasks.js';
 
 type ApplyPayload = { roomId?: string; action?: { kind?: 'ban' | 'pick'; ids?: string[] } };
 
-export const applyAction = onCall({ cors: true, region: 'us-central1' }, async (req) => {
+export const applyAction = onCall({ cors: true, region: 'asia-northeast1' }, async (req) => {
   const uid = req.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'UNAUTHENTICATED');
   const { roomId, action } = (req.data || {}) as ApplyPayload;

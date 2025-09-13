@@ -52,7 +52,7 @@ export async function processTurnTimeout(roomId: string, turnIndex: number): Pro
 }
 
 // サーバ側タイムアウト処理（Cloud Tasks からの呼び出し想定）
-export const onTurnTimeout = onCall({ cors: true, region: 'us-central1' }, async (req) => {
+export const onTurnTimeout = onCall({ cors: true, region: 'asia-northeast1' }, async (req) => {
   const { roomId, turnIndex } = (req.data || {}) as TimeoutPayload;
   if (!roomId || typeof turnIndex !== 'number') {
     throw new HttpsError('invalid-argument', 'INVALID_ARGUMENT');

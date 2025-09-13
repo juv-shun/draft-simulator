@@ -5,7 +5,7 @@ import type { Team } from '../types.js';
 
 export const claimSeat = onCall({
   cors: true,
-  region: 'us-central1',
+  region: 'asia-northeast1',
 }, async (req) => {
   const uid = req.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'UNAUTHENTICATED');

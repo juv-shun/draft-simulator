@@ -69,10 +69,8 @@ export function getFirestoreDb(): Firestore {
 export function getFunctionsClient(): Functions {
   if (functionsIns) return functionsIns;
   const appIns = getFirebaseApp();
-  functionsIns = getFunctions(
-    appIns,
-    (import.meta.env.VITE_FUNCTIONS_REGION as string) || 'asia-northeast1',
-  );
+  const region = (import.meta.env.VITE_FUNCTIONS_REGION as string) || 'asia-northeast1';
+  functionsIns = getFunctions(appIns, region);
   if (VITE_USE_EMULATORS === 'true') {
     try {
       connectFunctionsEmulator(functionsIns, 'localhost', 5001);

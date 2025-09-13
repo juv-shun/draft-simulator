@@ -146,7 +146,7 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
             ) : authError ? (
               <div className="text-sm text-rose-300">認証エラー: {authError}</div>
             ) : roomError ? (
-              <div className="text-sm text-rose-300">購読エラー: {roomError}</div>
+              <div className="text-sm text-rose-300">エラー: {roomError}</div>
             ) : !remoteRoom ? (
               <div className="text-sm text-slate-300">ロビーが見つかりません。</div>
             ) : (

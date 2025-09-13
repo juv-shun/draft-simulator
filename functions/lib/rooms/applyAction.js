@@ -2,7 +2,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db, serverTimestamp } from '../lib/firestore.js';
 import { applyActionToState } from './engine.js';
 import { scheduleTurnTimeout } from './tasks.js';
-export const applyAction = onCall({ cors: true, region: 'us-central1' }, async (req) => {
+export const applyAction = onCall({ cors: true, region: 'asia-northeast1' }, async (req) => {
     const uid = req.auth?.uid;
     if (!uid)
         throw new HttpsError('unauthenticated', 'UNAUTHENTICATED');

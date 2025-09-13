@@ -3,7 +3,7 @@ import { db, serverTimestamp } from '../lib/firestore.js';
 // 離席: 呼び出しユーザーが着席している席のみ離席可能
 export const leaveSeat = onCall({
     cors: true,
-    region: 'us-central1',
+    region: 'asia-northeast1',
 }, async (req) => {
     const uid = req.auth?.uid;
     if (!uid)

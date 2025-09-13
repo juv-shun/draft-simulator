@@ -3,7 +3,7 @@ import { db, serverTimestamp } from '../lib/firestore.js';
 import { scheduleTurnTimeout } from './tasks.js';
 export const startDraft = onCall({
     cors: true,
-    region: 'us-central1',
+    region: 'asia-northeast1',
 }, async (req) => {
     const uid = req.auth?.uid;
     if (!uid)

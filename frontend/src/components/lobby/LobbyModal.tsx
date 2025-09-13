@@ -4,6 +4,9 @@ import CopyToClipboardButton from '@/components/common/CopyToClipboardButton';
 import type { RoomMock, SeatMock } from '@/lobby/types';
 import { useLobbyMock } from '@/lobby/useLobbyMock';
 import { useLobbyRemote } from '@/lobby/useLobbyRemote';
+import SeatsGrid from '@/components/lobby/SeatsGrid';
+import useAutoRoomCreation from '@/lobby/useAutoRoomCreation';
+import useOptimisticSeats from '@/lobby/useOptimisticSeats';
 import React from 'react';
 import LobbySeatCard from './LobbySeatCard';
 
@@ -50,30 +53,8 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
     error: roomError,
   } = useLobbyRemote(remoteMode ? roomId : null);
 
-  // 楽観的更新: Functions 応答を待たずに自分の座席変更を即時反映
-  const [optimistic, setOptimistic] = React.useState<{ purple?: SeatMock; orange?: SeatMock }>({});
-  const roomForView = React.useMemo<RoomMock | null>(() => {
-    if (!remoteRoom) return null;
-    if (!optimistic.purple && !optimistic.orange) return remoteRoom;
-    return {
-      ...remoteRoom,
-      seats: {
-        purple: optimistic.purple ?? remoteRoom.seats.purple,
-        orange: optimistic.orange ?? remoteRoom.seats.orange,
-      },
-    } as RoomMock;
-  }, [remoteRoom, optimistic]);
-  // サーバ値と一致したら楽観的状態をクリア
-  React.useEffect(() => {
-    if (!remoteRoom) return;
-    setOptimistic((cur) => {
-      if (!cur.purple && !cur.orange) return cur;
-      const next: { purple?: SeatMock; orange?: SeatMock } = { ...cur };
-      if (cur.purple && remoteRoom.seats.purple.uid === cur.purple.uid) delete next.purple;
-      if (cur.orange && remoteRoom.seats.orange.uid === cur.orange.uid) delete next.orange;
-      return next;
-    });
-  }, [remoteRoom]);
+  // 楽観的座席状態（購読結果に即時反映）
+  const { roomForView, setOptimistic } = useOptimisticSeats(remoteRoom, uid);
 
   // Mock: 既存のローカル挙動
   const { room, createRoom, claimSeat, leaveSeat, setDisplayName, canStart, myUid } =
@@ -84,49 +65,14 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
     if (!room) createRoom(15);
   }, [open, room, createRoom, remoteMode]);
 
-  // 2P選択直後に roomId が無い場合、自動でロビーを作成（Functions）
-  const creatingRef = React.useRef(false);
-  React.useEffect(() => {
-    if (!open) return;
-    if (roomId) return; // 既にIDあり
-    // 認証完了後にのみ実行（二重作成の抑止）
-    if (authLoading || !uid) return;
-    if (creatingRef.current) return; // 多重実行防止
-    // StrictMode 対策: 直近の自動作成を sessionStorage で短期間ガード（10秒）
-    const guardKey = 'ds_auto_create_guard';
-    const now = Date.now();
-    try {
-      const guard = typeof window !== 'undefined' ? window.sessionStorage.getItem(guardKey) : null;
-      if (guard) {
-        const [status, tsStr] = guard.split(':');
-        const ts = Number(tsStr || '0');
-        if (status === 'creating' && now - ts < 10000) return;
-      }
-      if (typeof window !== 'undefined') window.sessionStorage.setItem(guardKey, `creating:${now}`);
-    } catch {}
-    creatingRef.current = true;
-    (async () => {
-      try {
-        const res = await apiCreateRoom(15);
-        const id = res.roomId;
-        if (typeof window !== 'undefined') {
-          const base = window.location.origin + window.location.pathname;
-          const next = `${base}?mode=2p&roomId=${encodeURIComponent(id)}`;
-          window.history.replaceState(null, '', next);
-        }
-        setRoomId(id);
-        try {
-          if (typeof window !== 'undefined')
-            window.sessionStorage.setItem(guardKey, `created:${Date.now()}`);
-        } catch {}
-      } catch (e) {
-        creatingRef.current = false;
-        try {
-          if (typeof window !== 'undefined') window.sessionStorage.removeItem(guardKey);
-        } catch {}
-      }
-    })();
-  }, [open, roomId, authLoading, uid]);
+  // 2P選択直後に roomId が無ければ自動で Functions にて作成
+  useAutoRoomCreation({
+    enabled: open && !roomId,
+    roomId,
+    authLoading,
+    uid,
+    onCreated: (id) => setRoomId(id),
+  });
 
   if (!open) return null;
 
@@ -161,112 +107,42 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                     <CopyToClipboardButton text={buildRoomUrl(remoteRoom)} />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(() => {
-                    const isHost = Boolean(uid && remoteRoom.hostUid && uid === remoteRoom.hostUid);
-                    const canLeavePurple =
-                      isHost || (roomForView ?? remoteRoom)!.seats.purple.uid === uid;
-                    const canLeaveOrange =
-                      isHost || (roomForView ?? remoteRoom)!.seats.orange.uid === uid;
-                    const leaveReason = isHost
-                      ? undefined
-                      : '自分の席以外は離席できません（ホストのみ可能）';
-                    return (
-                      <>
-                        <LobbySeatCard
-                          team="purple"
-                          seat={(roomForView ?? remoteRoom)!.seats.purple}
-                          onClaim={async (name) => {
-                            if (!roomId || !name) return;
-                            // 楽観反映
-                            if (uid) {
-                              setOptimistic((cur) => ({
-                                ...cur,
-                                purple: { occupied: true, displayName: name, uid },
-                              }));
-                            }
-                            try {
-                              await apiClaimSeat(roomId, 'purple', name);
-                            } catch (e) {
-                              // 失敗時はロールバック
-                              setOptimistic((cur) => ({ ...cur, purple: undefined }));
-                              throw e;
-                            }
-                          }}
-                          onLeave={async () => {
-                            if (!roomId) return;
-                            // 楽観反映（displayNameは保持）
-                            const current = (roomForView ?? remoteRoom)!.seats.purple;
-                            setOptimistic((cur) => ({
-                              ...cur,
-                              purple: {
-                                occupied: false,
-                                displayName: current.displayName ?? null,
-                                uid: null,
-                              },
-                            }));
-                            try {
-                              await apiLeaveSeat(roomId, 'purple');
-                            } catch (e) {
-                              // ロールバック
-                              setOptimistic((cur) => ({ ...cur, purple: undefined }));
-                              throw e;
-                            }
-                          }}
-                          onChangeName={(name) => {
-                            // Functions経由は確定時に claimSeat のみ使用
-                          }}
-                          canLeave={canLeavePurple}
-                          leaveDisabledReason={leaveReason}
-                          disableClaim={remoteRoom.seats.orange.uid === uid}
-                          disableClaimReason="同一ユーザーは両席に着席できません"
-                        />
-                        <LobbySeatCard
-                          team="orange"
-                          seat={(roomForView ?? remoteRoom)!.seats.orange}
-                          onClaim={async (name) => {
-                            if (!roomId || !name) return;
-                            if (uid) {
-                              setOptimistic((cur) => ({
-                                ...cur,
-                                orange: { occupied: true, displayName: name, uid },
-                              }));
-                            }
-                            try {
-                              await apiClaimSeat(roomId, 'orange', name);
-                            } catch (e) {
-                              setOptimistic((cur) => ({ ...cur, orange: undefined }));
-                              throw e;
-                            }
-                          }}
-                          onLeave={async () => {
-                            if (!roomId) return;
-                            const current = (roomForView ?? remoteRoom)!.seats.orange;
-                            setOptimistic((cur) => ({
-                              ...cur,
-                              orange: {
-                                occupied: false,
-                                displayName: current.displayName ?? null,
-                                uid: null,
-                              },
-                            }));
-                            try {
-                              await apiLeaveSeat(roomId, 'orange');
-                            } catch (e) {
-                              setOptimistic((cur) => ({ ...cur, orange: undefined }));
-                              throw e;
-                            }
-                          }}
-                          onChangeName={(name) => {}}
-                          canLeave={canLeaveOrange}
-                          leaveDisabledReason={leaveReason}
-                          disableClaim={remoteRoom.seats.purple.uid === uid}
-                          disableClaimReason="同一ユーザーは両席に着席できません"
-                        />
-                      </>
-                    );
-                  })()}
-                </div>
+                {roomForView && (
+                  <SeatsGrid
+                    room={roomForView}
+                    uid={uid}
+                    canLeaveOtherSeat={Boolean(uid && remoteRoom.hostUid && uid === remoteRoom.hostUid)}
+                    onClaim={async (team, name) => {
+                      if (!roomId || !name) return;
+                      if (uid) {
+                        setOptimistic((cur) => ({
+                          ...cur,
+                          [team]: { occupied: true, displayName: name, uid } as SeatMock,
+                        }));
+                      }
+                      try {
+                        await apiClaimSeat(roomId, team, name);
+                      } catch (e) {
+                        setOptimistic((cur) => ({ ...cur, [team]: undefined }));
+                        throw e;
+                      }
+                    }}
+                    onLeave={async (team) => {
+                      if (!roomId) return;
+                      const current = roomForView.seats[team];
+                      setOptimistic((cur) => ({
+                        ...cur,
+                        [team]: { occupied: false, displayName: current.displayName ?? null, uid: null } as SeatMock,
+                      }));
+                      try {
+                        await apiLeaveSeat(roomId, team);
+                      } catch (e) {
+                        setOptimistic((cur) => ({ ...cur, [team]: undefined }));
+                        throw e;
+                      }
+                    }}
+                  />
+                )}
                 <div className="flex items-center justify-center gap-3">
                   {(() => {
                     const bothSeated =

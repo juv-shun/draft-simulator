@@ -269,7 +269,7 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                     );
                   })()}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center gap-3">
                   {(() => {
                     const bothSeated =
                       (roomForView ?? remoteRoom)!.seats.purple.occupied &&

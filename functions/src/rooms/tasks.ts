@@ -1,6 +1,7 @@
 // Cloud Tasks 予約のスタブ。
 // 本番では @google-cloud/tasks で HTTP タスクを予約し、onTurnTimeout を叩く。
 import { processTurnTimeout } from './onTurnTimeout.js';
+import { CloudTasksClient } from '@google-cloud/tasks';
 
 function isEmulator(): boolean {
   return Boolean(
@@ -12,6 +13,8 @@ function isEmulator(): boolean {
 
 // クライアント優先のため、サーバ側は猶予を設ける
 const GRACE_MS = 2000; // 2秒余裕
+const LOCATION = 'asia-northeast1';
+const QUEUE_ID = process.env.TASKS_QUEUE_ID || 'draft-timeouts';
 
 export async function scheduleTurnTimeout(roomId: string, turnIndex: number, etaMs: number): Promise<void> {
   // Emulator: setTimeout + 直接処理
@@ -32,6 +35,35 @@ export async function scheduleTurnTimeout(roomId: string, turnIndex: number, eta
     return;
   }
 
-  // TODO: 本番/CI では Cloud Tasks による HTTP タスク予約に置換
-  console.log('[prod-stub] scheduleTurnTimeout', { roomId, turnIndex, etaMs: etaMs + GRACE_MS });
+  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+  if (!projectId) {
+    console.warn('[prod] scheduleTurnTimeout: missing projectId');
+    return;
+  }
+
+  const client = new CloudTasksClient();
+  const parent = client.queuePath(projectId, LOCATION, QUEUE_ID);
+
+  const targetUrl = `https://${LOCATION}-${projectId}.cloudfunctions.net/onTurnTimeoutHttp`;
+
+  const scheduleSeconds = Math.floor(Date.now() / 1000) + Math.max(1, Math.ceil((etaMs + GRACE_MS) / 1000));
+
+  const payload = Buffer.from(JSON.stringify({ roomId, turnIndex })).toString('base64');
+
+  const task = {
+    httpRequest: {
+      httpMethod: 'POST' as const,
+      url: targetUrl,
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+    },
+    scheduleTime: { seconds: scheduleSeconds },
+  };
+
+  try {
+    const [resp] = await client.createTask({ parent, task: task as any });
+    console.log('[prod] task scheduled', resp.name || '(no name)');
+  } catch (e) {
+    console.error('[prod] createTask failed', e);
+  }
 }

@@ -2,6 +2,8 @@ import React from 'react';
 import type { Pokemon } from '@/types';
 import pokemonsData from '@/data/pokemons.json';
 import useDraftControllerLocal from './draft/useDraftControllerLocal';
+import ModeSelectModal from '@/components/ModeSelectModal';
+import LobbyModal from '@/components/lobby/LobbyModal';
 
 const TeamPanel = React.lazy(() => import('./components/TeamPanel'));
 const CandidateGrid = React.lazy(() => import('./components/CandidateGrid'));
@@ -10,6 +12,9 @@ const pokemons = pokemonsData as Pokemon[];
 
 const App: React.FC = () => {
   const ctrl = useDraftControllerLocal(pokemons);
+  const [mode, setMode] = React.useState<'1p' | '2p' | null>(null);
+  const [showModeSelect, setShowModeSelect] = React.useState(true);
+  const [showLobby, setShowLobby] = React.useState(false);
 
   return (
     <div className="min-h-screen">
@@ -34,13 +39,10 @@ const App: React.FC = () => {
           <div className="panel flex flex-col items-center justify-center gap-3">
             {!ctrl.state.draftStarted ? (
               <>
-                <button
-                  type="button"
-                  onClick={() => ctrl.start()}
-                  className="rounded-md bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                >
-                  ドラフトピック開始
-                </button>
+                <div className="text-sm text-slate-300">モード選択待ち</div>
+                {mode && (
+                  <span className="text-xs rounded bg-slate-700 px-2 py-1 text-slate-200">現在: {mode === '1p' ? '1人' : '2人'}</span>
+                )}
               </>
             ) : (
               <>
@@ -76,6 +78,27 @@ const App: React.FC = () => {
           />
         </section>
       </main>
+
+      {/* Modals */}
+      <ModeSelectModal
+        open={showModeSelect && !ctrl.state.draftStarted}
+        onSelect1P={() => {
+          setMode('1p');
+          setShowModeSelect(false);
+          ctrl.start();
+        }}
+        onSelect2P={() => {
+          setMode('2p');
+          setShowModeSelect(false);
+          setShowLobby(true);
+        }}
+      />
+      <LobbyModal
+        open={showLobby && !ctrl.state.draftStarted}
+        onStartDraft={() => {
+          ctrl.start();
+        }}
+      />
     </div>
   );
 };
@@ -87,4 +110,3 @@ export default function AppWithSuspense(): JSX.Element {
     </React.Suspense>
   );
 }
-

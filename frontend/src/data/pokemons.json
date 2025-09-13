@@ -144,12 +144,6 @@
     "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/9-machampjpg.png"
   },
   {
-    "id": "scyther",
-    "name": "ストライク",
-    "type": "バランス型",
-    "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/zzzzz-166222029951bb92ce-b7da-400d-aaa0-701a7eab3042jpeg.png"
-  },
-  {
     "id": "gyarados",
     "name": "ギャラドス",
     "type": "バランス型",
@@ -202,6 +196,12 @@
     "name": "メタグロス",
     "type": "バランス型",
     "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/zzzzz-16927621132fa3488a-537b-41a8-9488-4b81622c0982.png"
+  },
+  {
+    "id": "tsareena",
+    "name": "アマージョ",
+    "type": "バランス型",
+    "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/zz1639084918cdbf3e10-8738-4d23-ab43-45bf02a5113cjpeg.png"
   },
   {
     "id": "buzzwole",

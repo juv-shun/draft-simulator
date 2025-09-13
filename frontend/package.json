@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:emu": "VITE_FIREBASE_ENABLED=true VITE_USE_EMULATORS=true vite",
+    "dev:emu": "VITE_USE_EMULATORS=true vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",

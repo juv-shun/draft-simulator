@@ -33,18 +33,16 @@ function getRoomIdFromLocation(): string | null {
 }
 
 const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
-  // 切替条件: フラグ + URL の roomId
-  const isFirebaseEnabled = (import.meta.env.VITE_FIREBASE_ENABLED as string) === 'true';
   // フェーズ4以降は直書きモードを廃止（常に Functions 経由）
   const [roomId, setRoomId] = React.useState<string | null>(getRoomIdFromLocation());
   React.useEffect(() => {
     // モーダルが開くタイミングで URL を確認
     if (open) setRoomId(getRoomIdFromLocation());
   }, [open]);
-  const remoteMode = open && isFirebaseEnabled && Boolean(roomId);
+  const remoteMode = open && Boolean(roomId);
 
   // Remote: 匿名Auth + Firestore購読（読み取りのみ）
-  const { uid, loading: authLoading, error: authError } = useAnonAuth(isFirebaseEnabled);
+  const { uid, loading: authLoading, error: authError } = useAnonAuth(remoteMode);
   const {
     room: remoteRoom,
     loading: roomLoading,
@@ -85,11 +83,10 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
     if (!room) createRoom(15);
   }, [open, room, createRoom, remoteMode]);
 
-  // 2P選択直後に roomId が無い場合、自動でロビーを作成（Emulator/開発専用書き込み or Functions）
+  // 2P選択直後に roomId が無い場合、自動でロビーを作成（Functions）
   const creatingRef = React.useRef(false);
   React.useEffect(() => {
     if (!open) return;
-    if (!isFirebaseEnabled) return;
     if (roomId) return; // 既にIDあり
     // 認証完了後にのみ実行（二重作成の抑止）
     if (authLoading || !uid) return;
@@ -128,7 +125,7 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
         } catch {}
       }
     })();
-  }, [open, isFirebaseEnabled, roomId, authLoading, uid]);
+  }, [open, roomId, authLoading, uid]);
 
   if (!open) return null;
 

@@ -17,9 +17,9 @@ sequenceDiagram
 
     Host->>HostClient: 「ロビー作成」をクリック
     HostClient->>Func: createRoom(config?) 呼び出し
-    Func->>DB: rooms ドキュメント作成\n{ roomId, seats: {PURPLE,ORANGE},\n  state: 初期値, config, createdAt }
+    Func->>DB: rooms ドキュメント作成<br />{ roomId, seats: {PURPLE,ORANGE},<br />  state: 初期値, config, createdAt }
     Func-->>HostClient: { roomId }
-    Note over HostClient: ロビー画面へ遷移。\n部屋URLを表示・コピー
+    Note over HostClient: ロビー画面へ遷移。<br />部屋URLを表示・コピー
 
     HostClient->>DB: onSnapshot 購読開始（rooms/{roomId}）
     DB-->>HostClient: 初期スナップショット（座席=未着席）
@@ -46,7 +46,7 @@ sequenceDiagram
     Note over HostClient: 両席が着席したら開始可能
     Host->>HostClient: 「ドラフト開始」をクリック
     HostClient->>Func: startDraft(roomId)
-    Func->>DB: state = { phase: BAN1, turnTeam: PURPLE, turnIndex: 1,\n                          deadline: now+15s, lastAction: null }
+    Func->>DB: state = { phase: BAN1, turnTeam: PURPLE, turnIndex: 1,<br />                          deadline: now+15s, lastAction: null }
     Func->>Tasks: schedule onTurnTimeout(roomId, turnIndex=1, ETA=15s)
     DB-->>HostClient: スナップショット（開始・BAN1・紫ターン・deadline）
     DB-->>OrangeClient: スナップショット（開始・BAN1・紫ターン・deadline）

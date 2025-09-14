@@ -5,6 +5,8 @@ export function messageFromFirebaseError(err: unknown): string {
   const code = e?.code || '';
   // functions の onCall は `functions/<code>` の形式になることがある
   const norm = code.startsWith('functions/') ? code.slice('functions/'.length) : code;
+  // functions 側の message を補助的に参照（コードが同一でも詳細を出したいケース）
+  const msg = (e?.message || '').toUpperCase();
   switch (norm) {
     case 'unauthenticated':
       return '認証されていません。ページを更新して再度お試しください。';
@@ -13,6 +15,10 @@ export function messageFromFirebaseError(err: unknown): string {
     case 'invalid-argument':
       return '入力値が不正です。もう一度ご確認ください。';
     case 'failed-precondition':
+      if (msg === 'NOT_IN_LOBBY') return 'ドラフト開始後は着席できません（観戦のみ）。';
+      if (msg === 'SAME_USER_BOTH_SEATS') return '同一ユーザーは両席に着席できません。';
+      if (msg === 'ALREADY_OCCUPIED') return 'すでに着席済みです。';
+      if (msg === 'EMPTY_DISPLAY_NAME') return '表示名を入力してください。';
       return '前提条件を満たしていません。状態を確認して再度お試しください。';
     case 'not-found':
       return '対象が見つかりません。URLやルーム状態をご確認ください。';
@@ -20,4 +26,3 @@ export function messageFromFirebaseError(err: unknown): string {
       return e?.message || '不明なエラーが発生しました。時間をおいて再度お試しください。';
   }
 }
-

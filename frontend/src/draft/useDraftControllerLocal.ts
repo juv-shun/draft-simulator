@@ -431,6 +431,7 @@ export function useDraftControllerLocal(allPokemons: Pokemon[]): DraftController
     disabledIds,
     selectionMode,
     canConfirm,
+    isSpectator: false,
     highlights,
     start,
     select: setPendingSelection,

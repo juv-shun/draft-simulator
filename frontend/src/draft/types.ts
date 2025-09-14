@@ -33,6 +33,7 @@ export type DraftController<TPokemon> = {
   disabledIds: string[];
   selectionMode: SelectionMode;
   canConfirm: boolean;
+  isSpectator?: boolean; // 2Pリモート時の観戦者判定
   highlights: {
     purple: ({ type: ActionType; index: number } | { type: ActionType; index: number }[]) | null;
     orange: ({ type: ActionType; index: number } | { type: ActionType; index: number }[]) | null;
@@ -44,4 +45,3 @@ export type DraftController<TPokemon> = {
   confirm: (pokemon?: TPokemon) => void;
   confirmPair: (list: TPokemon[]) => void;
 };
-

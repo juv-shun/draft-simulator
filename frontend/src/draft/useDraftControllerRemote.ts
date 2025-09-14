@@ -296,6 +296,7 @@ export function useDraftControllerRemote(allPokemons: Pokemon[]): DraftControlle
     disabledIds,
     selectionMode,
     canConfirm,
+    isSpectator: Boolean(draftStarted && !myTeam),
     highlights,
     start: () => {
       // 2Pでは LobbyModal 側から startDraft を呼ぶため、ここでは no-op

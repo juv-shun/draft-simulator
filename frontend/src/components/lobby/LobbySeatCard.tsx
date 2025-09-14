@@ -14,6 +14,7 @@ type Props = {
   disableClaimReason?: string;
   canLeave?: boolean;
   leaveDisabledReason?: string;
+  nameReadOnly?: boolean;
 };
 
 const LobbySeatCard: React.FC<Props> = ({
@@ -26,6 +27,7 @@ const LobbySeatCard: React.FC<Props> = ({
   disableClaimReason,
   canLeave = true,
   leaveDisabledReason,
+  nameReadOnly = false,
 }) => {
   const color = teamGradientClass(team);
   const title = teamTitle(team);
@@ -69,6 +71,7 @@ const LobbySeatCard: React.FC<Props> = ({
           onCompositionStart={onCompositionStart}
           onCompositionEnd={onCompositionEnd}
           onBlur={handleBlur}
+          readOnly={nameReadOnly}
           className="flex-1 rounded-md border border-slate-700 bg-slate-800/60 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />
         {!seat.occupied ? (

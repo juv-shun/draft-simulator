@@ -7,7 +7,6 @@ import type { RoomMock, SeatMock } from '@/lobby/types';
 import { useLobbyMock } from '@/lobby/useLobbyMock';
 import { useLobbyRemote } from '@/lobby/useLobbyRemote';
 import SeatsGrid from '@/components/lobby/SeatsGrid';
-import SpectatorSeats from '@/components/lobby/SpectatorSeats';
 import useOptimisticSeats from '@/lobby/useOptimisticSeats';
 import React from 'react';
 import { messageFromFirebaseError } from '@/api/errors';
@@ -109,6 +108,10 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                     room={roomForView}
                     uid={uid}
                     canLeaveOtherSeat={Boolean(uid && remoteRoom.hostUid && uid === remoteRoom.hostUid)}
+                    spectator={Boolean(
+                      uid && roomForView.seats.purple.occupied && roomForView.seats.orange.occupied &&
+                      uid !== roomForView.seats.purple.uid && uid !== roomForView.seats.orange.uid
+                    )}
                     onClaim={async (team, name) => {
                       if (!roomId || !name) return;
                       if (uid) {
@@ -142,7 +145,20 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                     }}
                   />
                 )}
-                <SpectatorSeats />
+                {(() => {
+                  const both = Boolean(roomForView?.seats.purple.occupied && roomForView?.seats.orange.occupied);
+                  const amSeated = Boolean(
+                    uid && (uid === roomForView?.seats.purple.uid || uid === roomForView?.seats.orange.uid),
+                  );
+                  if (both && !amSeated) {
+                    return (
+                      <div className="rounded-md border border-slate-700 bg-slate-800/60 p-3 text-sm text-slate-200">
+                        現在満席です。離席が出るまで観戦のみ可能です。
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
                 {(() => {
                   // 開始条件は必ずサーバ実体(remoteRoom)に基づいて判定（楽観状態は使わない）
                   const bothSeatedRemote = Boolean(
@@ -206,8 +222,6 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                 disableClaimReason="同一ユーザーは両席に着席できません"
               />
             </div>
-
-            <SpectatorSeats />
 
             <div className="flex items-center gap-3">
               <button

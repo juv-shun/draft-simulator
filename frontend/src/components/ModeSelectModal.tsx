@@ -19,8 +19,30 @@ const ModeSelectModal: React.FC<Props> = ({ open, onSelect1P, onSelect2P }) => {
     <Overlay>
       <div className="panel space-y-4">
         <div className="flex items-center">
-          <h2 className="text-lg font-semibold">ゲームモード選択</h2>
+          <h2 className="text-lg font-semibold">本アプリケーションの概要</h2>
         </div>
+        <div className="rounded-md border border-slate-700 bg-slate-800/60 p-3 text-sm leading-relaxed text-slate-200">
+          <p className="mb-2">
+            このアプリは、ポケモンユナイトの「3BANドラフト」を手軽に体験・練習できるアプリケーションです。
+          </p>
+          <div className="mb-3 rounded-md border border-amber-600 bg-amber-900/30 p-3 text-amber-100">
+            <div className="mb-1 text-xs font-semibold tracking-wide text-amber-200">
+              本アプリの特徴
+            </div>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>同時BANではなく、交互BANを採用</li>
+              <li>PICKの途中でBANフェーズ2へ切り替え</li>
+            </ul>
+          </div>
+          <ul className="list-disc pl-5 space-y-1 text-slate-300">
+            <li>1人プレイ: 自身でパープルチームとオレンジチームのどちらもピックするモード</li>
+            <li>2人プレイ: ロビーを作成し URL 共有で対戦形式で行うモード</li>
+          </ul>
+          <p className="mt-2 text-xs text-slate-400">
+            注意: 本アプリはポケモンユナイトのゲーム内に実装された時点で廃止します。
+          </p>
+        </div>
+        <h2 className="text-lg font-semibold">ゲームモード選択</h2>
         <div className="grid grid-cols-1 gap-3">
           <button
             type="button"

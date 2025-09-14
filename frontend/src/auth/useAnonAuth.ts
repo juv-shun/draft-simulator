@@ -38,4 +38,3 @@ export function useAnonAuth(enabled: boolean) {
 }
 
 export default useAnonAuth;
-

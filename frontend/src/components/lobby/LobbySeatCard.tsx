@@ -32,7 +32,7 @@ const LobbySeatCard: React.FC<Props> = ({
   const color = teamGradientClass(team);
   const title = teamTitle(team);
   const { value, setValue, composing, onChange, onCompositionStart, onCompositionEnd } = useImeText(
-    seat.displayName ?? ''
+    seat.displayName ?? '',
   );
 
   // 外部からの表示名更新を取り込む（編集中は上書きしない）
@@ -97,9 +97,7 @@ const LobbySeatCard: React.FC<Props> = ({
             disabled={!canLeave}
             className="rounded-md bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white shadow enabled:hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-400 disabled:opacity-40 disabled:cursor-not-allowed"
             title={
-              !canLeave
-                ? (leaveDisabledReason ?? 'この席を離席させる権限がありません')
-                : undefined
+              !canLeave ? (leaveDisabledReason ?? 'この席を離席させる権限がありません') : undefined
             }
           >
             離席

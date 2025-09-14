@@ -43,29 +43,32 @@ export function useLobbyMock() {
     return r;
   }, []);
 
-  const claimSeat = React.useCallback((team: Team, name?: string) => {
-    setRoom((cur) => {
-      if (!cur) return cur;
-      const trimmed = (name ?? '').trim();
-      if (!trimmed) return cur; // 表示名が空の場合は着席不可
-      if (cur.seats[team].occupied) return cur;
-      const other: Team = team === 'purple' ? 'orange' : 'purple';
-      // 同一ユーザーによる両席着席を禁止
-      if (cur.seats[other].uid && cur.seats[other].uid === myUid) return cur;
-      return {
-        ...cur,
-        seats: {
-          ...cur.seats,
-          [team]: {
-            ...cur.seats[team],
-            occupied: true,
-            displayName: trimmed,
-            uid: myUid,
+  const claimSeat = React.useCallback(
+    (team: Team, name?: string) => {
+      setRoom((cur) => {
+        if (!cur) return cur;
+        const trimmed = (name ?? '').trim();
+        if (!trimmed) return cur; // 表示名が空の場合は着席不可
+        if (cur.seats[team].occupied) return cur;
+        const other: Team = team === 'purple' ? 'orange' : 'purple';
+        // 同一ユーザーによる両席着席を禁止
+        if (cur.seats[other].uid && cur.seats[other].uid === myUid) return cur;
+        return {
+          ...cur,
+          seats: {
+            ...cur.seats,
+            [team]: {
+              ...cur.seats[team],
+              occupied: true,
+              displayName: trimmed,
+              uid: myUid,
+            },
           },
-        },
-      };
-    });
-  }, [myUid]);
+        };
+      });
+    },
+    [myUid],
+  );
 
   const leaveSeat = React.useCallback((team: Team) => {
     setRoom((cur) => {

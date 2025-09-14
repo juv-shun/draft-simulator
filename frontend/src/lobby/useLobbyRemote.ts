@@ -35,7 +35,7 @@ export function useLobbyRemote(roomId: string | null) {
       (e) => {
         setError(e?.message ?? 'ロビーの購読に失敗しました');
         setLoading(false);
-      }
+      },
     );
     return () => unsub();
   }, [roomId]);

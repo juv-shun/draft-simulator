@@ -123,11 +123,17 @@ const App: React.FC = () => {
                 <div className="text-2xl font-bold">{ctrl.phaseLabel}</div>
                 <div className="text-sm">
                   {mode === '2p' && ctrl.isSpectator ? (
-                    <span className="rounded bg-slate-700/60 text-slate-200 px-2 py-0.5">観戦中</span>
+                    <span className="rounded bg-slate-700/60 text-slate-200 px-2 py-0.5">
+                      観戦中
+                    </span>
                   ) : ctrl.canConfirm ? (
-                    <span className="rounded bg-emerald-700/40 text-emerald-200 px-2 py-0.5">あなたのターン</span>
+                    <span className="rounded bg-emerald-700/40 text-emerald-200 px-2 py-0.5">
+                      あなたのターン
+                    </span>
                   ) : (
-                    <span className="rounded bg-slate-700/60 text-slate-200 px-2 py-0.5">相手のターン</span>
+                    <span className="rounded bg-slate-700/60 text-slate-200 px-2 py-0.5">
+                      相手のターン
+                    </span>
                   )}
                 </div>
                 <div className="text-sm text-slate-300">制限時間</div>
@@ -149,17 +155,17 @@ const App: React.FC = () => {
         </section>
 
         <section>
-            <CandidateGrid
-              pokemons={pokemons}
-              canConfirm={ctrl.canConfirm}
+          <CandidateGrid
+            pokemons={pokemons}
+            canConfirm={ctrl.canConfirm}
             canSelect={mode === '2p' ? ctrl.canConfirm : true}
-              disabledIds={ctrl.disabledIds}
-              onConfirm={(p) => ctrl.confirm(p)}
-              onSelect={(p) => ctrl.select(p)}
-              selectionMode={ctrl.selectionMode}
-              onConfirmPair={(pair) => ctrl.confirmPair(pair)}
-              onSelectMulti={(list) => ctrl.selectMulti(list)}
-            />
+            disabledIds={ctrl.disabledIds}
+            onConfirm={(p) => ctrl.confirm(p)}
+            onSelect={(p) => ctrl.select(p)}
+            selectionMode={ctrl.selectionMode}
+            onConfirmPair={(pair) => ctrl.confirmPair(pair)}
+            onSelectMulti={(list) => ctrl.selectMulti(list)}
+          />
         </section>
       </main>
 
@@ -203,7 +209,9 @@ const App: React.FC = () => {
                   </div>
                 </>
               ) : (
-                <div className="text-sm text-slate-300">Firebase に接続し、部屋を作成しています…</div>
+                <div className="text-sm text-slate-300">
+                  Firebase に接続し、部屋を作成しています…
+                </div>
               )}
             </div>
           </div>

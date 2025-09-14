@@ -23,4 +23,3 @@ const StartButton: React.FC<Props> = ({ disabled, onClick, titleWhenDisabled }) 
 };
 
 export default StartButton;
-

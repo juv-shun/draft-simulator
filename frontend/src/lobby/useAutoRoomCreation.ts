@@ -39,7 +39,8 @@ export function useAutoRoomCreation({ enabled, roomId, authLoading, uid, onCreat
         }
         onCreated(id);
         try {
-          if (typeof window !== 'undefined') window.sessionStorage.setItem(guardKey, `created:${Date.now()}`);
+          if (typeof window !== 'undefined')
+            window.sessionStorage.setItem(guardKey, `created:${Date.now()}`);
         } catch {}
       } catch (e) {
         creatingRef.current = false;
@@ -52,4 +53,3 @@ export function useAutoRoomCreation({ enabled, roomId, authLoading, uid, onCreat
 }
 
 export default useAutoRoomCreation;
-

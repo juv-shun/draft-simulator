@@ -33,4 +33,3 @@ export function useOptimisticSeats(remoteRoom: RoomMock | null, uid: string | nu
 }
 
 export default useOptimisticSeats;
-

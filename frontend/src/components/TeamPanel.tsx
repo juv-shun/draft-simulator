@@ -38,21 +38,17 @@ const TeamPanel: React.FC<Props> = ({ team, activeHighlight, bans = [], picks = 
             return (
               <div
                 key={`ban-${i}`}
-                className={
-                  `slot slot-square ${
-                    active ? `animate-pulse ring-2 ${ringClass} ring-offset-2 ring-offset-slate-900` : ''
-                  }`
-                }
+                className={`slot slot-square ${
+                  active
+                    ? `animate-pulse ring-2 ${ringClass} ring-offset-2 ring-offset-slate-900`
+                    : ''
+                }`}
                 aria-live={active ? 'polite' : undefined}
                 aria-label={active ? `現在のターン: BAN ${i}` : undefined}
                 title={active ? '現在のターン' : undefined}
               >
                 {p ? (
-                  <img
-                    src={p.imageUrl}
-                    alt={p.name}
-                    className="h-[80%] w-[80%] object-contain"
-                  />
+                  <img src={p.imageUrl} alt={p.name} className="h-[80%] w-[80%] object-contain" />
                 ) : (
                   <>BAN {i}</>
                 )}
@@ -71,21 +67,17 @@ const TeamPanel: React.FC<Props> = ({ team, activeHighlight, bans = [], picks = 
             return (
               <div
                 key={`pick-${i}`}
-                className={
-                  `slot slot-square ${
-                    active ? `animate-pulse ring-2 ${ringClass} ring-offset-2 ring-offset-slate-900` : ''
-                  }`
-                }
+                className={`slot slot-square ${
+                  active
+                    ? `animate-pulse ring-2 ${ringClass} ring-offset-2 ring-offset-slate-900`
+                    : ''
+                }`}
                 aria-live={active ? 'polite' : undefined}
                 aria-label={active ? `現在のターン: PICK ${i}` : undefined}
                 title={active ? '現在のターン' : undefined}
               >
                 {p ? (
-                  <img
-                    src={p.imageUrl}
-                    alt={p.name}
-                    className="h-[80%] w-[80%] object-contain"
-                  />
+                  <img src={p.imageUrl} alt={p.name} className="h-[80%] w-[80%] object-contain" />
                 ) : (
                   <>{i}</>
                 )}

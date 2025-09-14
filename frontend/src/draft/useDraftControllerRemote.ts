@@ -7,7 +7,15 @@ import type { Pokemon } from '@/types';
 import type { DraftController, DraftState, SelectionMode } from './types';
 
 type ServerTeam = 'PURPLE' | 'ORANGE';
-type ServerPhase = 'lobby' | 'starting' | 'ban1' | 'pick1' | 'ban2' | 'pick2' | 'aborted' | 'finished';
+type ServerPhase =
+  | 'lobby'
+  | 'starting'
+  | 'ban1'
+  | 'pick1'
+  | 'ban2'
+  | 'pick2'
+  | 'aborted'
+  | 'finished';
 
 type ServerState = {
   phase: ServerPhase;
@@ -197,8 +205,22 @@ export function useDraftControllerRemote(allPokemons: Pokemon[]): DraftControlle
       }
       case 'pick1': {
         if (pp < 1) return { purple: { type: 'pick', index: 1 }, orange: null };
-        if (op < 2) return { purple: null, orange: [{ type: 'pick', index: 1 }, { type: 'pick', index: 2 }] };
-        if (pp < 3) return { purple: [{ type: 'pick', index: 2 }, { type: 'pick', index: 3 }], orange: null };
+        if (op < 2)
+          return {
+            purple: null,
+            orange: [
+              { type: 'pick', index: 1 },
+              { type: 'pick', index: 2 },
+            ],
+          };
+        if (pp < 3)
+          return {
+            purple: [
+              { type: 'pick', index: 2 },
+              { type: 'pick', index: 3 },
+            ],
+            orange: null,
+          };
         if (op < 3) return { purple: null, orange: { type: 'pick', index: 3 } };
         return { purple: null, orange: null };
       }
@@ -209,7 +231,14 @@ export function useDraftControllerRemote(allPokemons: Pokemon[]): DraftControlle
       }
       case 'pick2': {
         if (op < 4) return { purple: null, orange: { type: 'pick', index: 4 } };
-        if (pp < 5) return { purple: [{ type: 'pick', index: 4 }, { type: 'pick', index: 5 }], orange: null };
+        if (pp < 5)
+          return {
+            purple: [
+              { type: 'pick', index: 4 },
+              { type: 'pick', index: 5 },
+            ],
+            orange: null,
+          };
         if (op < 5) return { purple: null, orange: { type: 'pick', index: 5 } };
         return { purple: null, orange: null };
       }
@@ -218,7 +247,10 @@ export function useDraftControllerRemote(allPokemons: Pokemon[]): DraftControlle
     }
   }, [serverState]);
 
-  const draftStarted = React.useMemo(() => Boolean(serverState && serverState.phase !== 'lobby' && serverState.phase !== 'starting'), [serverState]);
+  const draftStarted = React.useMemo(
+    () => Boolean(serverState && serverState.phase !== 'lobby' && serverState.phase !== 'starting'),
+    [serverState],
+  );
 
   const canConfirm = React.useMemo<boolean>(() => {
     if (!draftStarted) return false;
@@ -232,14 +264,14 @@ export function useDraftControllerRemote(allPokemons: Pokemon[]): DraftControlle
       serverState?.phase === 'ban1'
         ? 'ban_phase_1'
         : serverState?.phase === 'pick1'
-        ? 'pick_phase_1'
-        : serverState?.phase === 'ban2'
-        ? 'ban_phase_2'
-        : serverState?.phase === 'pick2'
-        ? 'pick_phase_2'
-        : serverState?.phase === 'finished'
-        ? 'completed'
-        : 'ban_phase_1',
+          ? 'pick_phase_1'
+          : serverState?.phase === 'ban2'
+            ? 'ban_phase_2'
+            : serverState?.phase === 'pick2'
+              ? 'pick_phase_2'
+              : serverState?.phase === 'finished'
+                ? 'completed'
+                : 'ban_phase_1',
     draftStarted,
     secondsLeft,
     activeTurn: null,
@@ -412,8 +444,17 @@ export function useAutoSubmitOnTimeout(params: {
         console.warn('auto submit failed', e);
       }
     })();
-  }, [params.roomId, params.serverState?.turnIndex, params.secondsLeft, params.canConfirm, params.selectionMode, params.pendingSelection, params.pendingMulti, params.disabledIds, params.allPokemons]);
+  }, [
+    params.roomId,
+    params.serverState?.turnIndex,
+    params.secondsLeft,
+    params.canConfirm,
+    params.selectionMode,
+    params.pendingSelection,
+    params.pendingMulti,
+    params.disabledIds,
+    params.allPokemons,
+  ]);
 }
-
 
 export default useDraftControllerRemote;

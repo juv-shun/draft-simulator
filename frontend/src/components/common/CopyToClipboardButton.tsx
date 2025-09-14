@@ -35,4 +35,3 @@ const CopyToClipboardButton: React.FC<Props> = ({ text, className }) => {
 };
 
 export default CopyToClipboardButton;
-

@@ -5,7 +5,8 @@ import type { RoomMock, SeatMock } from '@/lobby/types';
 function toSeatMock(raw: any): SeatMock {
   const uid = (raw?.uid ?? null) as string | null;
   const displayNameRaw = raw?.displayName;
-  const displayName = typeof displayNameRaw === 'string' ? displayNameRaw : displayNameRaw ?? null;
+  const displayName =
+    typeof displayNameRaw === 'string' ? displayNameRaw : (displayNameRaw ?? null);
   const occupied = Boolean(uid);
   return { occupied, displayName, uid };
 }
@@ -37,4 +38,3 @@ export function mapRoom(docId: string, data: DocumentData): RoomMock | null {
   };
   return room;
 }
-

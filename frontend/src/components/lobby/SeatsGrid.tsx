@@ -12,7 +12,15 @@ type Props = {
   onChangeName?: (team: 'purple' | 'orange', name: string) => void;
 };
 
-const SeatsGrid: React.FC<Props> = ({ room, uid, canLeaveOtherSeat, spectator = false, onClaim, onLeave, onChangeName }) => {
+const SeatsGrid: React.FC<Props> = ({
+  room,
+  uid,
+  canLeaveOtherSeat,
+  spectator = false,
+  onClaim,
+  onLeave,
+  onChangeName,
+}) => {
   const isHost = canLeaveOtherSeat;
   const canLeavePurple = isHost || room.seats.purple.uid === uid;
   const canLeaveOrange = isHost || room.seats.orange.uid === uid;

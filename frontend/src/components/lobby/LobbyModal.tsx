@@ -107,10 +107,15 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                   <SeatsGrid
                     room={roomForView}
                     uid={uid}
-                    canLeaveOtherSeat={Boolean(uid && remoteRoom.hostUid && uid === remoteRoom.hostUid)}
+                    canLeaveOtherSeat={Boolean(
+                      uid && remoteRoom.hostUid && uid === remoteRoom.hostUid,
+                    )}
                     spectator={Boolean(
-                      uid && roomForView.seats.purple.occupied && roomForView.seats.orange.occupied &&
-                      uid !== roomForView.seats.purple.uid && uid !== roomForView.seats.orange.uid
+                      uid &&
+                        roomForView.seats.purple.occupied &&
+                        roomForView.seats.orange.occupied &&
+                        uid !== roomForView.seats.purple.uid &&
+                        uid !== roomForView.seats.orange.uid,
                     )}
                     onClaim={async (team, name) => {
                       if (!roomId || !name) return;
@@ -133,7 +138,11 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                       const current = roomForView.seats[team];
                       setOptimistic((cur) => ({
                         ...cur,
-                        [team]: { occupied: false, displayName: current.displayName ?? null, uid: null } as SeatMock,
+                        [team]: {
+                          occupied: false,
+                          displayName: current.displayName ?? null,
+                          uid: null,
+                        } as SeatMock,
                       }));
                       try {
                         setActionError(null);
@@ -146,9 +155,13 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
                   />
                 )}
                 {(() => {
-                  const both = Boolean(roomForView?.seats.purple.occupied && roomForView?.seats.orange.occupied);
+                  const both = Boolean(
+                    roomForView?.seats.purple.occupied && roomForView?.seats.orange.occupied,
+                  );
                   const amSeated = Boolean(
-                    uid && (uid === roomForView?.seats.purple.uid || uid === roomForView?.seats.orange.uid),
+                    uid &&
+                      (uid === roomForView?.seats.purple.uid ||
+                        uid === roomForView?.seats.orange.uid),
                   );
                   if (both && !amSeated) {
                     return (

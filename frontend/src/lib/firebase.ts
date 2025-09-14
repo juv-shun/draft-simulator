@@ -23,7 +23,9 @@ export function getFirebaseApp(): FirebaseApp {
   if (app) return app;
   // 開発環境では必ず Emulator を使用
   if (isDev && VITE_USE_EMULATORS !== 'true') {
-    throw new Error('開発環境では Emulator の使用が必須です。VITE_USE_EMULATORS=true を設定してください');
+    throw new Error(
+      '開発環境では Emulator の使用が必須です。VITE_USE_EMULATORS=true を設定してください',
+    );
   }
   if (!VITE_FIREBASE_API_KEY || !VITE_FIREBASE_PROJECT_ID) {
     throw new Error('Firebase 環境変数が未設定です。VITE_FIREBASE_* を設定してください');

@@ -1,12 +1,6 @@
 import React from 'react';
 import type { Pokemon } from '@/types';
-import type {
-  DraftController,
-  DraftState,
-  PhaseKey,
-  Turn,
-  SelectionMode,
-} from './types';
+import type { DraftController, DraftState, PhaseKey, Turn, SelectionMode } from './types';
 
 const initialState = (): DraftState<Pokemon> => ({
   phase: 'ban_phase_1',
@@ -81,11 +75,14 @@ export function useDraftControllerLocal(allPokemons: Pokemon[]): DraftController
   // derived disabled IDs
   const disabledIds = React.useMemo<string[]>(() => {
     const ids = new Set<string>();
-    [...state.bans.purple, ...state.bans.orange, ...state.picks.purple, ...state.picks.orange].forEach(
-      (p) => {
-        if (p) ids.add(p.id);
-      },
-    );
+    [
+      ...state.bans.purple,
+      ...state.bans.orange,
+      ...state.picks.purple,
+      ...state.picks.orange,
+    ].forEach((p) => {
+      if (p) ids.add(p.id);
+    });
     return Array.from(ids);
   }, [state.bans, state.picks]);
 
@@ -94,25 +91,48 @@ export function useDraftControllerLocal(allPokemons: Pokemon[]): DraftController
     const t = state.activeTurn;
     if (!t) return 'single';
     if (t.action !== 'pick') return 'single';
-    if ((t.team === 'orange' && t.index === 1) || (t.team === 'purple' && t.index === 2) || (t.team === 'purple' && t.index === 4))
+    if (
+      (t.team === 'orange' && t.index === 1) ||
+      (t.team === 'purple' && t.index === 2) ||
+      (t.team === 'purple' && t.index === 4)
+    )
       return 'multi2';
     return 'single';
   }, [state.activeTurn]);
 
   const canConfirm = React.useMemo<boolean>(() => state.draftStarted, [state.draftStarted]);
 
-  const highlights = React.useMemo<
-    DraftController<Pokemon>['highlights']
-  >(() => {
+  const highlights = React.useMemo<DraftController<Pokemon>['highlights']>(() => {
     const t = state.activeTurn;
     if (!t) return { purple: null, orange: null };
     if (t.action === 'pick') {
       if (t.team === 'purple') {
-        if (t.index === 2) return { purple: [{ type: 'pick', index: 2 }, { type: 'pick', index: 3 }], orange: null };
-        if (t.index === 4) return { purple: [{ type: 'pick', index: 4 }, { type: 'pick', index: 5 }], orange: null };
+        if (t.index === 2)
+          return {
+            purple: [
+              { type: 'pick', index: 2 },
+              { type: 'pick', index: 3 },
+            ],
+            orange: null,
+          };
+        if (t.index === 4)
+          return {
+            purple: [
+              { type: 'pick', index: 4 },
+              { type: 'pick', index: 5 },
+            ],
+            orange: null,
+          };
         return { purple: { type: 'pick', index: t.index }, orange: null };
       } else {
-        if (t.index === 1) return { purple: null, orange: [{ type: 'pick', index: 1 }, { type: 'pick', index: 2 }] };
+        if (t.index === 1)
+          return {
+            purple: null,
+            orange: [
+              { type: 'pick', index: 1 },
+              { type: 'pick', index: 2 },
+            ],
+          };
         return { purple: null, orange: { type: 'pick', index: t.index } };
       }
     }
@@ -167,7 +187,15 @@ export function useDraftControllerLocal(allPokemons: Pokemon[]): DraftController
         gotoTurn({ team: 'orange', action: 'pick', index: 4 });
       }
     }
-  }, [state.secondsLeft, state.activeTurn, state.draftStarted, disabledIds, allPokemons, pendingSelection, gotoTurn]);
+  }, [
+    state.secondsLeft,
+    state.activeTurn,
+    state.draftStarted,
+    disabledIds,
+    allPokemons,
+    pendingSelection,
+    gotoTurn,
+  ]);
 
   // timeout: pick steps
   React.useEffect(() => {
@@ -298,9 +326,18 @@ export function useDraftControllerLocal(allPokemons: Pokemon[]): DraftController
       setPendingSelection(null);
       stopTimer();
     }
-  }, [state.secondsLeft, state.activeTurn, state.draftStarted, state.picks, disabledIds, allPokemons, pendingSelection, pendingMulti, gotoTurn, stopTimer]);
-
-  
+  }, [
+    state.secondsLeft,
+    state.activeTurn,
+    state.draftStarted,
+    state.picks,
+    disabledIds,
+    allPokemons,
+    pendingSelection,
+    pendingMulti,
+    gotoTurn,
+    stopTimer,
+  ]);
 
   const confirm = React.useCallback(
     (pokemon?: Pokemon) => {
@@ -312,7 +349,10 @@ export function useDraftControllerLocal(allPokemons: Pokemon[]): DraftController
         if (turn.team === 'purple') {
           setState((s) => ({
             ...s,
-            bans: { ...s.bans, purple: s.bans.purple.map((x, i) => (i === turn.index - 1 ? pokemon : x)) },
+            bans: {
+              ...s.bans,
+              purple: s.bans.purple.map((x, i) => (i === turn.index - 1 ? pokemon : x)),
+            },
           }));
           setPendingSelection(null);
           if (turn.index === 1) gotoTurn({ team: 'orange', action: 'ban', index: 1 });
@@ -321,7 +361,10 @@ export function useDraftControllerLocal(allPokemons: Pokemon[]): DraftController
         } else {
           setState((s) => ({
             ...s,
-            bans: { ...s.bans, orange: s.bans.orange.map((x, i) => (i === turn.index - 1 ? pokemon : x)) },
+            bans: {
+              ...s.bans,
+              orange: s.bans.orange.map((x, i) => (i === turn.index - 1 ? pokemon : x)),
+            },
           }));
           setPendingSelection(null);
           if (turn.index === 1) gotoTurn({ team: 'purple', action: 'ban', index: 2 });

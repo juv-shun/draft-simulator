@@ -9,4 +9,3 @@ export function toServerTeam(team: ClientTeam): ServerTeam {
 export function toClientTeam(team: ServerTeam): ClientTeam {
   return team === 'PURPLE' ? 'purple' : 'orange';
 }
-

@@ -2,7 +2,12 @@ import { httpsCallable } from 'firebase/functions';
 import { getFunctionsClient } from '@/lib/firebase';
 import type { Team } from '@/types';
 import { toServerTeam } from '@/lib/team';
-import type { CreateRoomResponse, OkResponse, StartDraftResponse, ApplyActionResponse } from '@/api/types';
+import type {
+  CreateRoomResponse,
+  OkResponse,
+  StartDraftResponse,
+  ApplyActionResponse,
+} from '@/api/types';
 
 export async function apiCreateRoom(turnSeconds?: number): Promise<CreateRoomResponse> {
   const fns = getFunctionsClient();
@@ -13,10 +18,10 @@ export async function apiCreateRoom(turnSeconds?: number): Promise<CreateRoomRes
 
 export async function apiClaimSeat(roomId: string, team: Team, displayName: string): Promise<void> {
   const fns = getFunctionsClient();
-  const call = httpsCallable<{ roomId: string; team: 'PURPLE' | 'ORANGE'; displayName: string }, OkResponse>(
-    fns,
-    'claimSeat'
-  );
+  const call = httpsCallable<
+    { roomId: string; team: 'PURPLE' | 'ORANGE'; displayName: string },
+    OkResponse
+  >(fns, 'claimSeat');
   await call({ roomId, team: toServerTeam(team), displayName });
 }
 
@@ -29,7 +34,10 @@ export async function apiStartDraft(roomId: string): Promise<StartDraftResponse>
 
 export async function apiLeaveSeat(roomId: string, team: Team): Promise<void> {
   const fns = getFunctionsClient();
-  const call = httpsCallable<{ roomId: string; team: 'PURPLE' | 'ORANGE' }, OkResponse>(fns, 'leaveSeat');
+  const call = httpsCallable<{ roomId: string; team: 'PURPLE' | 'ORANGE' }, OkResponse>(
+    fns,
+    'leaveSeat',
+  );
   await call({ roomId, team: toServerTeam(team) });
 }
 
@@ -38,10 +46,10 @@ export async function apiApplyAction(
   action: { kind: 'ban' | 'pick'; ids: string[] },
 ): Promise<ApplyActionResponse> {
   const fns = getFunctionsClient();
-  const call = httpsCallable<{ roomId: string; action: { kind: 'ban' | 'pick'; ids: string[] } }, ApplyActionResponse>(
-    fns,
-    'applyAction',
-  );
+  const call = httpsCallable<
+    { roomId: string; action: { kind: 'ban' | 'pick'; ids: string[] } },
+    ApplyActionResponse
+  >(fns, 'applyAction');
   const res = await call({ roomId, action });
   return res.data;
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Pokemon } from '@/types';
-import type { DraftController, DraftState, PhaseKey, Turn, SelectionMode } from './types';
+import type { DraftController, DraftState, Turn, SelectionMode } from './types';
 
 const initialState = (): DraftState<Pokemon> => ({
   phase: 'ban_phase_1',

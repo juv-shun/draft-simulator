@@ -3,7 +3,7 @@ import { useAnonAuth } from '@/auth/useAnonAuth';
 import CopyToClipboardButton from '@/components/common/CopyToClipboardButton';
 import StartButton from '@/components/lobby/StartButton';
 import { buildRoomUrl } from '@/lib/roomUrl';
-import type { RoomMock, SeatMock } from '@/lobby/types';
+import type { SeatMock } from '@/lobby/types';
 import { useLobbyMock } from '@/lobby/useLobbyMock';
 import { useLobbyRemote } from '@/lobby/useLobbyRemote';
 import SeatsGrid from '@/components/lobby/SeatsGrid';

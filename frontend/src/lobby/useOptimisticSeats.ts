@@ -1,8 +1,7 @@
 import React from 'react';
 import type { RoomMock, SeatMock } from '@/lobby/types';
-import type { Team } from '@/types';
 
-export function useOptimisticSeats(remoteRoom: RoomMock | null, uid: string | null) {
+export function useOptimisticSeats(remoteRoom: RoomMock | null, _uid: string | null) {
   const [optimistic, setOptimistic] = React.useState<{ purple?: SeatMock; orange?: SeatMock }>({});
 
   const roomForView = React.useMemo<RoomMock | null>(() => {

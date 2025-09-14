@@ -169,8 +169,6 @@ export function useDraftControllerRemote(allPokemons: Pokemon[]): DraftControlle
   // selectionMode by expected count
   const selectionMode: SelectionMode = React.useMemo(() => {
     if (!serverState) return 'single';
-    const pb = serverState.bans?.PURPLE?.length ?? 0;
-    const ob = serverState.bans?.ORANGE?.length ?? 0;
     const pp = serverState.picks?.PURPLE?.length ?? 0;
     const op = serverState.picks?.ORANGE?.length ?? 0;
     switch (serverState.phase) {
@@ -290,10 +288,8 @@ export function useDraftControllerRemote(allPokemons: Pokemon[]): DraftControlle
         // 簡易トースト（アラート）でエラー表示
         try {
           const { messageFromFirebaseError } = await import('@/api/errors');
-          // eslint-disable-next-line no-alert
           alert(messageFromFirebaseError(e));
         } catch {
-          // eslint-disable-next-line no-alert
           alert('操作に失敗しました');
         }
       }
@@ -311,10 +307,8 @@ export function useDraftControllerRemote(allPokemons: Pokemon[]): DraftControlle
       } catch (e) {
         try {
           const { messageFromFirebaseError } = await import('@/api/errors');
-          // eslint-disable-next-line no-alert
           alert(messageFromFirebaseError(e));
         } catch {
-          // eslint-disable-next-line no-alert
           alert('操作に失敗しました');
         }
       }

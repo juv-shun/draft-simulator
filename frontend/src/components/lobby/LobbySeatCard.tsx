@@ -43,7 +43,6 @@ const LobbySeatCard: React.FC<Props> = ({
     if (!composing && external !== value) {
       setValue(external);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seat.displayName]);
 
   const handleChange = (next: string): void => {

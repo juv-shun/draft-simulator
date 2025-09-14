@@ -19,6 +19,11 @@ export const claimSeat = onCall({
         if (!snap.exists)
             throw new HttpsError('not-found', 'ROOM_NOT_FOUND');
         const data = snap.data();
+        // ドラフト開始後の新規着席は禁止（観戦のみ）
+        const phase = data?.state?.phase;
+        if (phase && phase !== 'lobby') {
+            throw new HttpsError('failed-precondition', 'NOT_IN_LOBBY');
+        }
         const other = team === 'PURPLE' ? 'ORANGE' : 'PURPLE';
         const otherUid = data?.seats?.[other]?.uid;
         if (otherUid && otherUid === uid)

@@ -5,6 +5,11 @@ import type { Pokemon } from '@/types';
 import React from 'react';
 import useDraftControllerLocal from './draft/useDraftControllerLocal';
 import useDraftControllerRemote from './draft/useDraftControllerRemote';
+import { useAnonAuth } from '@/auth/useAnonAuth';
+import { apiCreateRoom } from '@/api/firebaseFunctions';
+import { doc, getDoc } from 'firebase/firestore';
+import { getFirestoreDb } from '@/lib/firebase';
+import { messageFromFirebaseError } from '@/api/errors';
 
 const TeamPanel = React.lazy(() => import('./components/TeamPanel'));
 const CandidateGrid = React.lazy(() => import('./components/CandidateGrid'));
@@ -18,6 +23,13 @@ const App: React.FC = () => {
   const ctrl = mode === '2p' ? ctrlRemote : ctrlLocal;
   const [showModeSelect, setShowModeSelect] = React.useState(true);
   const [showLobby, setShowLobby] = React.useState(false);
+  const [preparing2p, setPreparing2p] = React.useState(false);
+  const [prepError, setPrepError] = React.useState<string | null>(null);
+  const prepareGuardRef = React.useRef(false);
+  const [prepAttempt, setPrepAttempt] = React.useState(0);
+
+  // 2人プレイ準備用の匿名認証（準備時のみ有効化）
+  const anon = useAnonAuth(preparing2p);
 
   // 直接URLで roomId が指定された場合は 2人プレイのロビーを自動表示
   React.useEffect(() => {
@@ -25,12 +37,56 @@ const App: React.FC = () => {
     const sp = new URLSearchParams(window.location.search);
     const roomId = sp.get('roomId');
     const modeParam = sp.get('mode');
-    if (roomId || modeParam === '2p') {
+    if (roomId) {
       setMode('2p');
       setShowModeSelect(false);
       setShowLobby(true);
+    } else if (modeParam === '2p') {
+      // roomId なしで 2p 指定の場合は、裏で準備してからロビー表示
+      setMode('2p');
+      setShowModeSelect(false);
+      setPreparing2p(true);
     }
   }, []);
+
+  // 2人プレイの準備フロー（匿名認証 → 部屋作成 → URL 更新 → 初回ドキュメント存在確認 → ロビー表示）
+  React.useEffect(() => {
+    if (!preparing2p) return;
+    if (prepareGuardRef.current) return;
+    if (anon.loading) return;
+    if (anon.error) {
+      setPrepError(anon.error);
+      return;
+    }
+    if (!anon.uid) return;
+    prepareGuardRef.current = true;
+    (async () => {
+      try {
+        setPrepError(null);
+        const res = await apiCreateRoom(15);
+        const id = res.roomId;
+        if (typeof window !== 'undefined') {
+          const base = window.location.origin + window.location.pathname;
+          const next = `${base}?mode=2p&roomId=${encodeURIComponent(id)}`;
+          window.history.replaceState(null, '', next);
+        }
+        // 任意: 初回読み取りで存在を確認（購読前に作成完了を担保）
+        try {
+          const db = getFirestoreDb();
+          const ref = doc(db, 'rooms', id);
+          await getDoc(ref);
+        } catch {
+          // 読み取り失敗は致命ではないため握りつぶす
+        }
+        setShowLobby(true);
+        setPreparing2p(false);
+      } catch (e) {
+        setPrepError(messageFromFirebaseError(e));
+      } finally {
+        prepareGuardRef.current = false;
+      }
+    })();
+  }, [preparing2p, anon.loading, anon.error, anon.uid, prepAttempt]);
 
   return (
     <div className="min-h-screen">
@@ -106,6 +162,51 @@ const App: React.FC = () => {
       </main>
 
       {/* Modals */}
+      {preparing2p && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative z-10 w-full max-w-md p-4">
+            <div className="panel space-y-3">
+              <div className="text-lg font-semibold">2人プレイの準備中…</div>
+              {prepError ? (
+                <>
+                  <div className="rounded-md border border-rose-700 bg-rose-900/40 px-3 py-2 text-sm text-rose-100">
+                    {prepError}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      onClick={() => {
+                        setPrepError(null);
+                        // 再試行
+                        prepareGuardRef.current = false;
+                        setPrepAttempt((n) => n + 1);
+                      }}
+                    >
+                      再試行
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                      onClick={() => {
+                        setPrepError(null);
+                        setPreparing2p(false);
+                        setShowModeSelect(true);
+                        setMode(null);
+                      }}
+                    >
+                      モード選択に戻る
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-slate-300">Firebase に接続し、部屋を作成しています…</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <ModeSelectModal
         open={showModeSelect && !ctrl.state.draftStarted}
         onSelect1P={() => {
@@ -116,7 +217,7 @@ const App: React.FC = () => {
         onSelect2P={() => {
           setMode('2p');
           setShowModeSelect(false);
-          setShowLobby(true);
+          setPreparing2p(true);
         }}
       />
       <LobbyModal

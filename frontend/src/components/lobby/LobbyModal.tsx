@@ -1,4 +1,4 @@
-import { apiClaimSeat, apiCreateRoom, apiLeaveSeat, apiStartDraft } from '@/api/firebaseFunctions';
+import { apiClaimSeat, apiLeaveSeat, apiStartDraft } from '@/api/firebaseFunctions';
 import { useAnonAuth } from '@/auth/useAnonAuth';
 import CopyToClipboardButton from '@/components/common/CopyToClipboardButton';
 import StartButton from '@/components/lobby/StartButton';
@@ -8,7 +8,6 @@ import { useLobbyMock } from '@/lobby/useLobbyMock';
 import { useLobbyRemote } from '@/lobby/useLobbyRemote';
 import SeatsGrid from '@/components/lobby/SeatsGrid';
 import SpectatorSeats from '@/components/lobby/SpectatorSeats';
-import useAutoRoomCreation from '@/lobby/useAutoRoomCreation';
 import useOptimisticSeats from '@/lobby/useOptimisticSeats';
 import React from 'react';
 import { messageFromFirebaseError } from '@/api/errors';
@@ -65,14 +64,7 @@ const LobbyModal: React.FC<Props> = ({ open, onStartDraft }) => {
     if (!room) createRoom(15);
   }, [open, room, createRoom, remoteMode]);
 
-  // 2P選択直後に roomId が無ければ自動で Functions にて作成
-  useAutoRoomCreation({
-    enabled: open && !roomId,
-    roomId,
-    authLoading,
-    uid,
-    onCreated: (id) => setRoomId(id),
-  });
+  // 部屋作成は App 側で完了させるため、ここでは行わない
 
   if (!open) return null;
 

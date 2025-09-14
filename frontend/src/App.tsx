@@ -1,15 +1,15 @@
+import { messageFromFirebaseError } from '@/api/errors';
+import { apiCreateRoom } from '@/api/firebaseFunctions';
+import { useAnonAuth } from '@/auth/useAnonAuth';
 import ModeSelectModal from '@/components/ModeSelectModal';
 import LobbyModal from '@/components/lobby/LobbyModal';
 import pokemonsData from '@/data/pokemons.json';
+import { getFirestoreDb } from '@/lib/firebase';
 import type { Pokemon } from '@/types';
+import { doc, getDoc } from 'firebase/firestore';
 import React from 'react';
 import useDraftControllerLocal from './draft/useDraftControllerLocal';
 import useDraftControllerRemote from './draft/useDraftControllerRemote';
-import { useAnonAuth } from '@/auth/useAnonAuth';
-import { apiCreateRoom } from '@/api/firebaseFunctions';
-import { doc, getDoc } from 'firebase/firestore';
-import { getFirestoreDb } from '@/lib/firebase';
-import { messageFromFirebaseError } from '@/api/errors';
 
 const TeamPanel = React.lazy(() => import('./components/TeamPanel'));
 const CandidateGrid = React.lazy(() => import('./components/CandidateGrid'));
@@ -209,9 +209,7 @@ const App: React.FC = () => {
                   </div>
                 </>
               ) : (
-                <div className="text-sm text-slate-300">
-                  Firebase に接続し、部屋を作成しています…
-                </div>
+                <div className="text-sm text-slate-300">部屋を作成しています…</div>
               )}
             </div>
           </div>

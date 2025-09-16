@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Sitemap: https://unite-draft-simulator.shink-poke.com/sitemap.xml
+

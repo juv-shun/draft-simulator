@@ -92,7 +92,7 @@ const App: React.FC = () => {
     <div className="min-h-screen">
       <header className="border-b border-slate-800 bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/50">
         <div className="mx-auto max-w-7xl px-4 py-4">
-          <h1 className="text-xl font-bold">Pokemon Unite 3BAN Draft Picker (β)</h1>
+          <h1 className="text-xl font-bold">ポケモンユナイト ドラフトシミュレーター</h1>
         </div>
       </header>
 

@@ -102,7 +102,7 @@
     "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/21-cinderacejpg.png"
   },
   {
-    "id": "interleon",
+    "id": "inteleon",
     "name": "インテレオン",
     "type": "アタック型",
     "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/zzzzz-16888412192908b3a6-4470-4040-b9ef-9c736a71b177.png"
@@ -198,10 +198,30 @@
     "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/zzzzz-16927621132fa3488a-537b-41a8-9488-4b81622c0982.png"
   },
   {
+    "id": "garchomp",
+    "name": "ガブリアス",
+    "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/15-garchompjpg.png"
+  },
+  {
+    "id": "lucario",
+    "name": "ルカリオ",
+    "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/16-lucariojpg.png"
+  },
+  {
+    "id": "aegislash",
+    "name": "ギルガルド",
+    "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/zz16439831442eaf58aa-c594-44e4-8826-a9f22b0918c7jpeg.png"
+  },
+  {
     "id": "tsareena",
     "name": "アマージョ",
     "type": "バランス型",
     "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/zz1639084918cdbf3e10-8738-4d23-ab43-45bf02a5113cjpeg.png"
+  },
+  {
+    "id": "mimikyu",
+    "name": "ミミッキュ",
+    "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/zzzzz-16927621132fa3488a-537b-41a8-9488-4b81622c0982.png"
   },
   {
     "id": "buzzwole",
@@ -228,7 +248,7 @@
     "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/zzzzz-16699545095b39b97b-2f90-4abb-983c-7f3804d6d60djpeg.png"
   },
   {
-    "id": "ceruleage",
+    "id": "ceruledge",
     "name": "ソウブレイズ",
     "type": "バランス型",
     "imageUrl": "https://tiermaker.com/images/chart/chart/pokemon-unite-tier-list--452797/zzzzz-17191743516331a25e-0fb7-4e33-ad4d-59fe1353b0af.png"

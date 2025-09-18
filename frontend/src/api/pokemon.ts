@@ -1,5 +1,4 @@
 import type { Pokemon } from '@/types';
-import pokemonsFallback from '@/data/pokemons.json';
 
 const POKEMON_API_URL =
   'https://s3.ap-northeast-1.amazonaws.com/juv-shun.website-hosting/pokemon_master_data/pokemons.json';
@@ -71,7 +70,7 @@ export async function fetchPokemonData(): Promise<Pokemon[]> {
 
     return data;
   } catch (error) {
-    console.warn('Failed to fetch pokemon data from S3, using fallback data:', error);
+    console.error('Failed to fetch pokemon data from S3:', error);
 
     const cachedData = localStorage.getItem(CACHE_KEYS.data);
     if (cachedData) {
@@ -80,9 +79,10 @@ export async function fetchPokemonData(): Promise<Pokemon[]> {
         if (validatePokemonData(parsed)) {
           return parsed;
         }
-      } catch {}
+      } catch {
+      }
     }
 
-    return pokemonsFallback as Pokemon[];
+    throw new Error('ポケモンデータの取得に失敗し、キャッシュデータも利用できません');
   }
 }

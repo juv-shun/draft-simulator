@@ -1,9 +1,9 @@
 import { messageFromFirebaseError } from '@/api/errors';
 import { apiCreateRoom } from '@/api/firebaseFunctions';
+import { fetchPokemonData } from '@/api/pokemon';
 import { useAnonAuth } from '@/auth/useAnonAuth';
 import ModeSelectModal from '@/components/ModeSelectModal';
 import LobbyModal from '@/components/lobby/LobbyModal';
-import pokemonsData from '@/data/pokemons.json';
 import { getFirestoreDb } from '@/lib/firebase';
 import type { Pokemon } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
@@ -14,9 +14,10 @@ import useDraftControllerRemote from './draft/useDraftControllerRemote';
 const TeamPanel = React.lazy(() => import('./components/TeamPanel'));
 const CandidateGrid = React.lazy(() => import('./components/CandidateGrid'));
 
-const pokemons = pokemonsData as Pokemon[];
-
 const App: React.FC = () => {
+  const [pokemons, setPokemons] = React.useState<Pokemon[]>([]);
+  const [pokemonsLoading, setPokemonsLoading] = React.useState(true);
+  const [pokemonsError, setPokemonsError] = React.useState<string | null>(null);
   const [mode, setMode] = React.useState<'1p' | '2p' | null>(null);
   const ctrlLocal = useDraftControllerLocal(pokemons);
   const ctrlRemote = useDraftControllerRemote(pokemons);
@@ -30,6 +31,26 @@ const App: React.FC = () => {
 
   // 2人プレイ準備用の匿名認証（準備時のみ有効化）
   const anon = useAnonAuth(preparing2p);
+
+  // ポケモンデータの取得
+  React.useEffect(() => {
+    const loadPokemonData = async () => {
+      try {
+        setPokemonsLoading(true);
+        setPokemonsError(null);
+        const data = await fetchPokemonData();
+        setPokemons(data);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'ポケモンデータの読み込みに失敗しました';
+        setPokemonsError(message);
+      } finally {
+        setPokemonsLoading(false);
+      }
+    };
+
+    loadPokemonData();
+  }, []);
 
   // 直接URLで roomId が指定された場合は 2人プレイのロビーを自動表示
   React.useEffect(() => {
@@ -87,6 +108,53 @@ const App: React.FC = () => {
       }
     })();
   }, [preparing2p, anon.loading, anon.error, anon.uid, prepAttempt]);
+
+  if (pokemonsLoading) {
+    return (
+      <div className="min-h-screen">
+        <header className="border-b border-slate-800 bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/50">
+          <div className="mx-auto max-w-7xl px-4 py-4">
+            <h1 className="text-xl font-bold">ポケモンユナイト ドラフトシミュレーター</h1>
+          </div>
+        </header>
+        <main className="mx-auto max-w-7xl px-4 py-6">
+          <div className="flex items-center justify-center min-h-96">
+            <div className="text-center space-y-3">
+              <div className="text-lg text-slate-300">ポケモンデータを読み込み中...</div>
+              <div className="text-sm text-slate-400">S3からデータを取得しています</div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (pokemonsError) {
+    return (
+      <div className="min-h-screen">
+        <header className="border-b border-slate-800 bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/50">
+          <div className="mx-auto max-w-7xl px-4 py-4">
+            <h1 className="text-xl font-bold">ポケモンユナイト ドラフトシミュレーター</h1>
+          </div>
+        </header>
+        <main className="mx-auto max-w-7xl px-4 py-6">
+          <div className="flex items-center justify-center min-h-96">
+            <div className="text-center space-y-3">
+              <div className="text-lg text-rose-400">エラーが発生しました</div>
+              <div className="text-sm text-slate-400">{pokemonsError}</div>
+              <button
+                type="button"
+                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500"
+                onClick={() => window.location.reload()}
+              >
+                再読み込み
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
